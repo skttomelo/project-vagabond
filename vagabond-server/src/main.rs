@@ -1,23 +1,33 @@
 use std::thread;
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::io::{Read, Write};
+use serde_json;
+use serde::{Serialize, Deserialize};
+
+mod entities;
+use entities::Player;
 
 fn handle_client(mut stream: TcpStream) {
-    let mut data = [0 as u8; 50]; // using 50 byte buffer
+    let mut data = [0 as u8; 1024]; // using 50 byte buffer
     // let mut writer = BufWriter::new(&stream);
     // let mut reader = BufReader::new(&stream);
     // reader.read_exact((&mut response).unwrap();
     // println!("{}",response);
 
+    // let json = std::str::from_utf8(&data[..]).expect("could not read");
+    let mut deserialize_me = serde_json::Deserializer::from_reader(&stream);
+    let client: Player = Player::deserialize(&mut deserialize_me).unwrap();
+    // let client: Player = serde_json::from_str(&json).expect("could not deserialize data");
+    println!("{:?}", client);
 
     while match stream.read(&mut data) {
-        Ok(size) => {
+        Ok(_size) => {
             // echo everything!
             // let mut reader = BufReader::new(&stream);
             // let mut response = String::from("");
             // println!("{}", reader.read_to_string(&mut response));
 
-            stream.write(&data[0..size]).unwrap();
+            // stream.write(&data[0..size]).unwrap();
             true
         },
         Err(_) => {
@@ -26,7 +36,7 @@ fn handle_client(mut stream: TcpStream) {
             false
         }
     } {
-        println!("{}", std::str::from_utf8(&data[..]).expect("could not read"));
+        
         break;
     }
 
