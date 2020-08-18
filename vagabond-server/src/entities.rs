@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Point2<T> {
@@ -13,13 +14,18 @@ pub struct Player {
     size: f32
 }
 
-impl Player {
-    #[allow(dead_code)]
-    pub fn new(pos: Point2<f32>, vel: Point2<f32>, size: f32) -> Player {
-        Player{
-            pos,
-            vel,
-            size
-        }
-    }
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Entity {
+    pub id: u32,
+    pub pos: Point2<f32>,
+    pub vel: Point2<f32>,
+    pub size: f32
 }
+
+// impl Entity {
+//     pub fn to_json(&self) -> String {
+//         format!("")
+//     }
+// }
+
+// pub type Entities = HashMap<u32,Entity>;
