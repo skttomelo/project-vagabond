@@ -1,5 +1,5 @@
 use serde_json;
-use serde::{Serialize, Deserialize};
+// use serde::{Serialize, Deserialize};
 
 use std::thread;
 use std::io::{Read, Write};
@@ -20,8 +20,8 @@ fn main() {
     let game_match_inner = game_match.clone();
 
     // bind ip address to server listener
-    let addr = "127.0.0.1::1337";
-    let mut listener = TcpListener::bind(addr).unwrap();
+    let addr = "127.0.0.1:1337";
+    let listener = TcpListener::bind(addr).unwrap();
 
     // handle each connection to server
     for stream in listener.incoming() {
