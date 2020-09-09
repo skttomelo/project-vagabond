@@ -22,3 +22,15 @@ impl Player {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Entity {
+    id: u8,
+    facing: Action, // Left or Right
+    movement: Action, // Still or Moving
+    stance: Action, // Attacking, Still, or Blocking
+    jumping: Action, // Jumping, Falling, or Still
+    pos: Point2<f32>,
+    vel: Point2<f32>,
+    size: f32
+}

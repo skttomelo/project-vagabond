@@ -58,6 +58,9 @@ fn handle_client(mut socket: TcpStream, game_match: Arc<RwLock<GameMatch>>, coun
         id = *c;
     }
 
+    socket.write_all(&[id]).expect("Unable to write id value to stream");
+    socket.flush().expect("Unable to flush stream");
+
 
     // establish connection loop
     while match socket.read(&mut data) {
