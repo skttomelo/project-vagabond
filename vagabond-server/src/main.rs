@@ -51,6 +51,18 @@ fn handle_client(mut socket: TcpStream, game_match: Arc<RwLock<GameMatch>>, coun
 
     let mut string_data = String::new();
     let id: u8;
+
+    // check if the server already has two people on it
+    // shut the stream down and return nothing
+    {
+        let c = counter.write().unwrap();
+        if *c == 1 {
+            println!("Closing connection with {} because server is handling max amount of clients", socket.peer_addr().unwrap());
+            socket.shutdown(Shutdown::Both).unwrap();
+            return ();
+        }
+    }
+
     // increment counter by 1
     {
         let mut c = counter.write().unwrap();
