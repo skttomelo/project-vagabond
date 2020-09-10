@@ -88,7 +88,7 @@ impl GameMatch {
 }
 
 // data received from server
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct GameMatchServer {
     pub entities: Vec<Entity>
 }

@@ -91,8 +91,19 @@ impl GameMatch {
     pub fn update_entity(&mut self, id: u8, player: Entity) {
         self.entities[id as usize].update_data(id, player);
     }
+
+    pub fn from_game_match_client(match_client: GameMatchClient) -> GameMatch {
+        GameMatch{
+            entities: match_client.entities
+        }
+    }
 }
 
+#[derive(Deserialize, Debug)]
+pub struct GameMatchClient {
+    pub id: u8,
+    pub entities: Vec<Entity>
+}
 
 // impl Entity {
 //     pub fn update(&mut self) {

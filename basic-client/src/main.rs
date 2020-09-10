@@ -1,6 +1,6 @@
 use std::net::{TcpStream, Shutdown};
 use std::io::{Read, Write};
-// use std::str::from_utf8;
+use std::str::from_utf8;
 use serde_json;
 // use serde::{Serialize, Deserialize};
 
@@ -56,14 +56,18 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream, game_match: Option<GameMatch>) {
-    // let mut data = [0u8; 4096];
+    let mut data = [0u8; 4096];
 
     let id: u8;
-    let mut string_data = String::new();
+    let mut string_data: String;
 
     // first acquire id
-    stream.read_to_string(&mut string_data).unwrap();
+    stream.read(&mut data).unwrap();
+    string_data = String::from(from_utf8(&data).unwrap());
+    string_data = String::from(string_data.trim_matches(char::from(0)));
     id = string_data.parse().unwrap(); // because id's type is declared earlier we do not need to do `parse::<u8>()`
+
+    println!("we have made it here pog id:{}", id);
 
     // create GameMatch if one doesn't exist already
     let mut game_match = match game_match {
@@ -84,11 +88,13 @@ fn handle_connection(mut stream: TcpStream, game_match: Option<GameMatch>) {
 
     // convert data to byte array and send to server
     let data_as_bytes = serialized_data.into_bytes();
-    stream.write_all(&data_as_bytes).expect("Could not write bytes to stream");
+    stream.write(&data_as_bytes).expect("Could not write bytes to stream");
     stream.flush().expect("Could not flush stream");
 
     // we will then intercept the new data and deserialize it
-    stream.read_to_string(&mut string_data).expect("Could not read data to string from stream");
+    stream.read(&mut data).unwrap();
+    string_data = String::from(from_utf8(&data).unwrap());
+    string_data = String::from(string_data.trim_matches(char::from(0)));
     let server_match: GameMatchServer = serde_json::from_str(string_data.as_str()).unwrap();
     let mut server_match_iter = server_match.entities.into_iter();
     // update the game match
