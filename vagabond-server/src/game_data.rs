@@ -1,7 +1,7 @@
-use std::str;
 use std::clone::Clone;
+use std::str;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 // use tokio::net::TcpStream;
 // use tokio::io::{BufReader, AsyncRead};
@@ -24,41 +24,40 @@ enum Action {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Point2<T> {
     pub x: T,
-    pub y: T
+    pub y: T,
 }
-
 
 // Deprecated
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Player {
     pos: Point2<f32>,
     vel: Point2<f32>,
-    size: f32
+    size: f32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Entity {
     id: u8,
-    facing: Action, // Left or Right
+    facing: Action,   // Left or Right
     movement: Action, // Still or Moving
-    stance: Action, // Attacking, Still, or Blocking
-    jumping: Action, // Jumping, Falling, or Still
+    stance: Action,   // Attacking, Still, or Blocking
+    jumping: Action,  // Jumping, Falling, or Still
     pos: Point2<f32>,
     vel: Point2<f32>,
-    size: f32
+    size: f32,
 }
 
 impl Entity {
     pub fn new() -> Entity {
         Entity {
             id: 0,
-            facing: Action::Right, // Left or Right
+            facing: Action::Right,   // Left or Right
             movement: Action::Still, // Still or Moving
-            stance: Action::Still, // Attacking, Still, or Blocking
-            jumping: Action::Still, // Jumping, Falling, or Still
-            pos: Point2::<f32>{x: 0.0, y: 0.0},
-            vel: Point2::<f32>{x: 0.0, y: 0.0},
-            size: 0.0
+            stance: Action::Still,   // Attacking, Still, or Blocking
+            jumping: Action::Still,  // Jumping, Falling, or Still
+            pos: Point2::<f32> { x: 0.0, y: 0.0 },
+            vel: Point2::<f32> { x: 0.0, y: 0.0 },
+            size: 0.0,
         }
     }
     pub fn update_data(&mut self, id: u8, entity: Entity) {
@@ -75,7 +74,7 @@ impl Entity {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GameMatch {
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
 }
 
 impl GameMatch {
@@ -84,7 +83,7 @@ impl GameMatch {
         let ent1 = Entity::new();
         let entity_vector = vec![ent, ent1];
         GameMatch {
-            entities: entity_vector
+            entities: entity_vector,
         }
     }
 
@@ -93,8 +92,8 @@ impl GameMatch {
     }
 
     pub fn from_game_match_client(match_client: GameMatchClient) -> GameMatch {
-        GameMatch{
-            entities: match_client.entities
+        GameMatch {
+            entities: match_client.entities,
         }
     }
 }
@@ -102,7 +101,7 @@ impl GameMatch {
 #[derive(Deserialize, Debug)]
 pub struct GameMatchClient {
     pub id: u8,
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
 }
 
 // impl Entity {
@@ -126,8 +125,6 @@ pub struct GameMatchClient {
 //             }
 //         }
 
-
-
 //         self.pos.x += self.vel.x;
 //         self.pos.y += self.vel.y;
 //     }
@@ -144,7 +141,7 @@ pub struct GameMatchClient {
 
 //         serde_json::from_str(json).unwrap()
 //     }
-    
+
 //     // pub fn to_json(&self) -> String {
 
 //     // }

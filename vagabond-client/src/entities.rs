@@ -1,10 +1,10 @@
 use ggez;
+use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
-use ggez::event::{KeyCode, KeyMods};
 
-pub enum State{}
+pub enum State {}
 
 pub trait Entity {
     fn update(&mut self, _ctx: &mut Context) -> GameResult;
@@ -16,21 +16,17 @@ pub trait Entity {
 pub struct Player {
     pos: Point2<f32>,
     vel: Point2<f32>,
-    size: f32
+    size: f32,
 }
 
 impl Player {
     pub fn new(pos: Point2<f32>, vel: Point2<f32>, size: f32) -> Player {
-        Player{
-            pos,
-            vel,
-            size
-        }
+        Player { pos, vel, size }
     }
 }
 
 impl Entity for Player {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult{
+    fn update(&mut self, _ctx: &mut Context) -> GameResult {
         self.pos.x += self.vel.x;
         self.pos.y += self.vel.y;
 
@@ -59,7 +55,7 @@ impl Entity for Player {
             KeyCode::S => self.vel.y = 1.0,
             KeyCode::A => self.vel.x = -1.0,
             KeyCode::D => self.vel.x = 1.0,
-            _ => ()
+            _ => (),
         }
     }
 
@@ -67,7 +63,7 @@ impl Entity for Player {
         match keycode {
             KeyCode::W | KeyCode::S => self.vel.y = 0.0,
             KeyCode::A | KeyCode::D => self.vel.x = 0.0,
-            _ => ()
+            _ => (),
         }
     }
 }

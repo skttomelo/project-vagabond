@@ -1,8 +1,8 @@
 use ggez;
+use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
-use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 
 mod entities;
 use entities::{Entity, Player};
@@ -13,7 +13,11 @@ struct MainState {
 
 impl MainState {
     fn new() -> GameResult<MainState> {
-        let p = Player::new(Point2::<f32>::new(0.0,0.0), Point2::<f32>::new(0.0,0.0), 30.0);
+        let p = Player::new(
+            Point2::<f32>::new(0.0, 0.0),
+            Point2::<f32>::new(0.0, 0.0),
+            30.0,
+        );
         let s = MainState { player: p };
         Ok(s)
     }
@@ -21,7 +25,6 @@ impl MainState {
 
 impl EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-
         self.player.update(_ctx)?;
 
         Ok(())
@@ -36,7 +39,13 @@ impl EventHandler for MainState {
         Ok(())
     }
 
-    fn key_down_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+    fn key_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        keycode: KeyCode,
+        _keymods: KeyMods,
+        _repeat: bool,
+    ) {
         self.player.key_down_event(keycode, _keymods, _repeat);
     }
 
