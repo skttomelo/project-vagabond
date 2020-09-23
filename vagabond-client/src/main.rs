@@ -4,8 +4,8 @@ use ggez::graphics;
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
-mod entities;
-use entities::{Entity, Player};
+mod game_data;
+use game_data::{Entity, GameMatch};
 
 struct MainState {
     player: Player,
@@ -55,6 +55,8 @@ impl EventHandler for MainState {
 }
 
 pub fn main() -> GameResult {
+    let gm = GameMatch::new();
+
     let cb = ggez::ContextBuilder::new("Vagabond Client", "Trevor Crow");
     let (ctx, event_loop) = &mut cb.build()?;
     let state = &mut MainState::new()?;
