@@ -36,6 +36,14 @@ pub struct Point2<T> {
     pub x: T,
     pub y: T,
 }
+impl<T> Point2<T> {
+    fn new(x: T, y: T) -> Point2<T> {
+        Point2::<T> {
+            x: x,
+            y: y
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct Entity {
@@ -56,11 +64,13 @@ impl Entity {
             movement: Action::Still, // Still or Moving
             stance: Action::Still,   // Attacking, Still, or Blocking
             jumping: Action::Still,  // Jumping, Falling, or Still
-            pos: Point2::<f32>{x: 0.0, y: 0.0},
-            vel: Point2::<f32>{x: 0.0, y: 0.0},
+            pos: Point2::<f32>::new(0.0, 0.0),
+            vel: Point2::<f32>::new(0.0, 0.0),
             size: 0.0,
         }
     }
+    
+    #[allow(dead_code)]
     pub fn update_data(&mut self, id: u8, entity: Entity) {
         self.id = id;
         self.facing = entity.facing;
