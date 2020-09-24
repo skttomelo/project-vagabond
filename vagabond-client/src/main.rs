@@ -1,13 +1,14 @@
 use ggez;
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
+use ggez::filesystem;
 use ggez::graphics::Image;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::{Context, GameResult};
 
-use std::fs;
-use std::fs::DirEntry;
-use std::path::Path;
+use std::env;
+use std::path::{Path, PathBuf};
+
 use std::net::TcpStream;
 
 mod game_data;
@@ -25,33 +26,43 @@ impl MainState {
         let gm = GameMatch::new();
         //TODO: factor out long expression here with some iteration through the directory for images
         // load images in
-        let entity_assets = vec![Image::new(ctx, Path::new("Samurai/samurai_blocking_stance.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_fighting_stance.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_idle_stance.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_walk_1.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_walk_2.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_walk_3.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_walk_4.png")).unwrap(),
-                                 Image::new(ctx, Path::new("Samurai/samurai_walk_5.png")).unwrap()];
-        let background_asset = Image::new(ctx, Path::new("Backgrounds/Dojo.png")).unwrap();
+        // let resource_path = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("resources");
+        // println!("{:?}", &resource_path);
+
+        let (entity_assets, background_asset) = match MainState::load_images(ctx){
+            Some((entity_assets, background_asset)) => (entity_assets, background_asset),
+            None => panic!("directory does not exist!")
+        };
         let s = MainState { game_match: gm, entity_assets: entity_assets, background_asset: background_asset, server: None};
         Ok(s)
     }
 
-    fn load_images(directory: &Path) -> Option<(Vec<Image>, Image)> {
-        if directory.is_dir() == false {
-            return None;
-        }
-        directory.join("Samurai");
-        let directories = fs::read_dir(&directory);
+    fn load_images(ctx: &mut Context) -> Option<(Vec<Image>, Image)> {
+        // get abs path to  Background and Samurai directories
+        let background_directory = Path::new("/Backgrounds/dojo.png");
+        let samurai_directory = {
+            let mut path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+            path.push("resources");
+            path.push("Samurai");
+            path
+        };
 
-        let background: Image;
+        // load background image
+        let background_image = Image::new(ctx, background_directory).unwrap();
 
-        let samurai: Vec<Image> = directories.map(|entry|{
+        // load samurai images
+        // let directories = fs::read_dir(&abs_samurai_directory).unwrap();
+
+        let mut samurai_images: Vec<Image> = Vec::new();
+        
+        for entry in samurai_directory.read_dir().unwrap() {
             let entry = entry.unwrap();
-        }).collect::<Vec<Image>>();
+            let path = Path::new("/Samurai").join(entry.file_name());
 
-        Some((samurai, background))
+            samurai_images.push(Image::new(ctx, path).unwrap());
+        }
+
+        Some((samurai_images, background_image))
     }
 }
 
@@ -101,7 +112,15 @@ pub fn main() -> GameResult {
         resizable: false,
     };
 
-    let cb = ggez::ContextBuilder::new("Vagabond Client", "Trevor Crow");
+    let mut cb = ggez::ContextBuilder::new("Vagabond Client", "Trevor Crow");
+
+    // get and add resource path
+    if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        let mut path = PathBuf::from(manifest_dir);
+        path.push("resources");
+        println!("Adding path {:?}", path);
+        cb = cb.add_resource_path(path);
+    }
     
     // build and split context builder with window configuration
     let (ctx, event_loop) = &mut cb.window_mode(window).build()?;
