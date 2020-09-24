@@ -67,6 +67,11 @@ impl Entity {
         }
     }
 
+    pub fn draw(&self, ctx: &mut Context) {
+
+    }
+
+    // might be used in the future for handling entity updates from the server
     #[allow(dead_code)]
     pub fn update_data(&mut self, id: u8, entity: Entity) {
         self.id = id;
@@ -149,6 +154,14 @@ impl GameMatch {
             id: 0,
             entities: entity_vector,
         }
+    }
+    pub fn draw(&mut self, ctx: &mut Context) -> GameResult {
+        // draw entities
+        for entity in &self.entities {
+            entity.draw(ctx);
+        }
+
+        Ok(())
     }
 }
 

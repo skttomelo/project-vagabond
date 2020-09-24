@@ -1,9 +1,12 @@
 use ggez;
+use ggez::nalgebra::Point2;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::graphics::Image;
 use ggez::{Context, GameResult};
+
+use cgmath::Vector2;
 
 use std::env;
 use std::path::{Path, PathBuf};
@@ -78,7 +81,11 @@ impl EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
-        // self.player.draw(ctx)?;
+        // draw background
+        graphics::draw(ctx, &self.background_asset, graphics::DrawParam::new().dest(Point2::<f32>::new(0.0,0.0)).scale(Vector2::<f32>::new(4.0,4.0)))?;
+
+        // draw everything else
+        self.game_match.draw(ctx).expect("Draw call for GameMatch failed");
 
         graphics::present(ctx)?;
         Ok(())
