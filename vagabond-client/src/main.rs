@@ -1,9 +1,9 @@
 use ggez;
-use ggez::nalgebra::Point2;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::graphics::Image;
+use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
@@ -48,8 +48,8 @@ impl MainState {
         // get abs path to  Background and Samurai directories
         let background_directory = Path::new("/Backgrounds/dojo.png");
         let samurai_directory = {
-            let mut path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()); // need to find a change for this because an error occurs in release where this is not possible to find
-            path.push("resources");
+            let mut path = PathBuf::from("./resources"); // need to find a change for this because an error occurs in release where this is not possible to find
+            path = path.canonicalize().unwrap();
             path.push("Samurai");
             path
         };
@@ -82,10 +82,19 @@ impl EventHandler for MainState {
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
         // draw background
-        graphics::draw(ctx, &self.background_asset, graphics::DrawParam::new().dest(Point2::<f32>::new(0.0,0.0)).scale(Vector2::<f32>::new(4.0,4.0)))?;
+        graphics::draw(
+            ctx,
+            &self.background_asset,
+            graphics::DrawParam::new()
+                .dest(Point2::<f32>::new(0.0, 0.0))
+                .scale(Vector2::<f32>::new(4.0, 4.0)),
+        )
+        .expect("Draw call failed");
 
         // draw everything else
-        self.game_match.draw(ctx).expect("Draw call for GameMatch failed");
+        self.game_match
+            .draw(ctx, &self.entity_assets)
+            .expect("Draw call for GameMatch failed");
 
         graphics::present(ctx)?;
         Ok(())

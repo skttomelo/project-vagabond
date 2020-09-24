@@ -1,7 +1,10 @@
 use ggez;
 use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics;
+use ggez::graphics::Image;
 use ggez::{Context, GameResult};
+
+use cgmath::Vector2;
 
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +43,18 @@ impl<T> Point2<T> {
     fn new(x: T, y: T) -> Point2<T> {
         Point2::<T> { x: x, y: y }
     }
+    fn as_mint_point(&self) -> cgmath::Point2<T>
+    where
+        T: Copy,
+    {
+        cgmath::Point2::<T>::new(self.x, self.y)
+    }
+    fn as_mint_vector(&self) -> Vector2<T>
+    where
+        T: Copy,
+    {
+        Vector2::<T>::new(self.x, self.y)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
@@ -51,7 +66,7 @@ pub struct Entity {
     jumping: Action,  // Jumping, Falling, or Still
     pos: Point2<f32>,
     vel: Point2<f32>,
-    size: f32,
+    scale: Point2<f32>, // make changes to reflect in server code because right now that is reflected as a f32 only
 }
 impl Entity {
     pub fn new() -> Entity {
@@ -63,12 +78,12 @@ impl Entity {
             jumping: Action::Still,  // Jumping, Falling, or Still
             pos: Point2::<f32>::new(0.0, 0.0),
             vel: Point2::<f32>::new(0.0, 0.0),
-            size: 0.0,
+            scale: Point2::<f32>::new(0.0, 0.0),
         }
     }
 
-    pub fn draw(&self, ctx: &mut Context) {
-
+    pub fn draw(&self, ctx: &mut Context, entity_assets: &Vec<Image>) {
+        let draw_param = graphics::DrawParam::new().dest(self.pos.as_mint_point());
     }
 
     // might be used in the future for handling entity updates from the server
@@ -81,7 +96,7 @@ impl Entity {
         self.jumping = entity.jumping;
         self.pos = entity.pos;
         self.vel = entity.vel;
-        self.size = entity.size;
+        self.scale = entity.scale;
     }
 }
 
@@ -155,10 +170,10 @@ impl GameMatch {
             entities: entity_vector,
         }
     }
-    pub fn draw(&mut self, ctx: &mut Context) -> GameResult {
+    pub fn draw(&mut self, ctx: &mut Context, entity_assets: &Vec<Image>) -> GameResult {
         // draw entities
         for entity in &self.entities {
-            entity.draw(ctx);
+            entity.draw(ctx, entity_assets);
         }
 
         Ok(())
