@@ -28,7 +28,7 @@ enum Action {
     Moving,
     Attacking,
     Blocking,
-    Damaged
+    Damaged,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
@@ -38,10 +38,7 @@ pub struct Point2<T> {
 }
 impl<T> Point2<T> {
     fn new(x: T, y: T) -> Point2<T> {
-        Point2::<T> {
-            x: x,
-            y: y
-        }
+        Point2::<T> { x: x, y: y }
     }
 }
 
@@ -69,7 +66,7 @@ impl Entity {
             size: 0.0,
         }
     }
-    
+
     #[allow(dead_code)]
     pub fn update_data(&mut self, id: u8, entity: Entity) {
         self.id = id;
@@ -140,7 +137,7 @@ impl Entity {
 
 pub struct GameMatch {
     pub id: u8,
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
 }
 
 impl GameMatch {
@@ -150,7 +147,7 @@ impl GameMatch {
         let entity_vector = vec![ent, ent1];
         GameMatch {
             id: 0,
-            entities: entity_vector
+            entities: entity_vector,
         }
     }
 }

@@ -1,9 +1,8 @@
 use ggez;
+use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::filesystem;
 use ggez::graphics::Image;
-use ggez::conf::{FullscreenType, WindowMode};
 use ggez::{Context, GameResult};
 
 use std::env;
@@ -18,22 +17,27 @@ struct MainState {
     game_match: GameMatch,
     entity_assets: Vec<Image>,
     background_asset: Image,
-    server: Option<TcpStream>
+    server: Option<TcpStream>,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let gm = GameMatch::new();
-        //TODO: factor out long expression here with some iteration through the directory for images
+        // TODO: factor out long expression here with some iteration through the directory for images
         // load images in
         // let resource_path = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("resources");
         // println!("{:?}", &resource_path);
 
-        let (entity_assets, background_asset) = match MainState::load_images(ctx){
+        let (entity_assets, background_asset) = match MainState::load_images(ctx) {
             Some((entity_assets, background_asset)) => (entity_assets, background_asset),
-            None => panic!("directory does not exist!")
+            None => panic!("directory does not exist!"),
         };
-        let s = MainState { game_match: gm, entity_assets: entity_assets, background_asset: background_asset, server: None};
+        let s = MainState {
+            game_match: gm,
+            entity_assets: entity_assets,
+            background_asset: background_asset,
+            server: None,
+        };
         Ok(s)
     }
 
@@ -41,7 +45,7 @@ impl MainState {
         // get abs path to  Background and Samurai directories
         let background_directory = Path::new("/Backgrounds/dojo.png");
         let samurai_directory = {
-            let mut path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+            let mut path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()); // need to find a change for this because an error occurs in release where this is not possible to find
             path.push("resources");
             path.push("Samurai");
             path
@@ -51,10 +55,8 @@ impl MainState {
         let background_image = Image::new(ctx, background_directory).unwrap();
 
         // load samurai images
-        // let directories = fs::read_dir(&abs_samurai_directory).unwrap();
-
         let mut samurai_images: Vec<Image> = Vec::new();
-        
+
         for entry in samurai_directory.read_dir().unwrap() {
             let entry = entry.unwrap();
             let path = Path::new("/Samurai").join(entry.file_name());
@@ -121,7 +123,7 @@ pub fn main() -> GameResult {
         println!("Adding path {:?}", path);
         cb = cb.add_resource_path(path);
     }
-    
+
     // build and split context builder with window configuration
     let (ctx, event_loop) = &mut cb.window_mode(window).build()?;
     let state = &mut MainState::new(ctx)?;
