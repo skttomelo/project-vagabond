@@ -13,6 +13,7 @@ const SCREEN_WIDTH:f32 = 800.0;
 const SCREEN_HEIGHT:f32 = 600.0;
 const TILE_SIZE:f32 = 32.0;
 const SCALE:f32 = 5.5;
+const PLAYER_TWO_COLOR:Color = Color::new(1.0,0.5,0.0,1.0);
 
 
 // user controlled entities require this
@@ -116,7 +117,7 @@ impl Entity {
         // set the draw params
         let mut draw_param = graphics::DrawParam::new().dest(self.pos.as_mint_point()).scale(self.scale.as_mint_vector());
         if self.id == 1 {
-            draw_param = draw_param.scale(Vector2::new(-self.scale.x, self.scale.y)).color(Color::new(1.0, 0.25, 1.0, 1.0));
+            draw_param = draw_param.scale(Vector2::new(-self.scale.x, self.scale.y)).color(PLAYER_TWO_COLOR);
         }
 
         graphics::draw(ctx, &entity_assets[0], draw_param).unwrap();
