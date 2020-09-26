@@ -14,7 +14,13 @@ use std::path::{Path, PathBuf};
 use std::net::TcpStream;
 
 mod game_data;
-use game_data::{ControlledActor, GameMatch};
+use game_data::{ControlledActor, GameMatch, SCREEN_HEIGHT, SCREEN_WIDTH};
+
+/*************************************************************
+ *  TODO: Place all images into a spritesheet and subdivide  *
+ *  images from the sheet so consistent animations can be    *
+ *  achieved.                                                *
+ *************************************************************/
 
 struct MainState {
     game_match: GameMatch,
@@ -42,7 +48,7 @@ impl MainState {
         // get abs path to  Background and Samurai directories
         let background_directory = Path::new("/Backgrounds/dojo.png");
         let samurai_directory = {
-            let mut path = PathBuf::from("./resources"); // need to find a change for this because an error occurs in release where this is not possible to find
+            let mut path = PathBuf::from("./resources");
             path = path.canonicalize().unwrap();
             path.push("Samurai");
             path
@@ -112,8 +118,8 @@ impl EventHandler for MainState {
 pub fn main() -> GameResult {
     // window
     let window = WindowMode {
-        width: 800.0,
-        height: 600.0,
+        width: SCREEN_WIDTH,
+        height: SCREEN_HEIGHT,
         maximized: false,
         fullscreen_type: FullscreenType::Windowed,
         borderless: false,

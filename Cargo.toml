@@ -26,7 +26,3 @@ path = "vagabond-client/src/main.rs"
 [[bin]]
 name = "server"
 path = "vagabond-server/src/main.rs"
-
-[[example]]
-name = "fs"
-path = "file-system-check/main.rs"
