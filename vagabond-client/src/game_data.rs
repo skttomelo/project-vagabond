@@ -2,6 +2,7 @@ use ggez;
 use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::graphics::Image;
+use ggez::graphics::Color; // will be used to depict damage and enemy color
 use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
@@ -78,12 +79,15 @@ impl Entity {
             jumping: Action::Still,  // Jumping, Falling, or Still
             pos: Point2::<f32>::new(0.0, 0.0),
             vel: Point2::<f32>::new(0.0, 0.0),
-            scale: Point2::<f32>::new(0.0, 0.0),
+            scale: Point2::<f32>::new(3.5, 3.5),
         }
     }
 
     pub fn draw(&self, ctx: &mut Context, entity_assets: &Vec<Image>) {
-        let draw_param = graphics::DrawParam::new().dest(self.pos.as_mint_point());
+        // set the draw params
+        let draw_param = graphics::DrawParam::new().dest(self.pos.as_mint_point()).scale(self.scale.as_mint_vector());
+
+        graphics::draw(ctx, &entity_assets[0], draw_param).unwrap();
     }
 
     // might be used in the future for handling entity updates from the server
