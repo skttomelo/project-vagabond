@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::net::TcpStream;
 
 mod game_data;
-use game_data::{Entity, GameMatch};
+use game_data::{ControlledActor, GameMatch};
 
 struct MainState {
     game_match: GameMatch,
@@ -26,15 +26,9 @@ struct MainState {
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let gm = GameMatch::new();
-        // TODO: factor out long expression here with some iteration through the directory for images
-        // load images in
-        // let resource_path = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("resources");
-        // println!("{:?}", &resource_path);
 
-        let (entity_assets, background_asset) = match MainState::load_images(ctx) {
-            Some((entity_assets, background_asset)) => (entity_assets, background_asset),
-            None => panic!("directory does not exist!"),
-        };
+        let (entity_assets, background_asset) = MainState::load_images(ctx);
+
         let s = MainState {
             game_match: gm,
             entity_assets: entity_assets,
@@ -44,7 +38,7 @@ impl MainState {
         Ok(s)
     }
 
-    fn load_images(ctx: &mut Context) -> Option<(Vec<Image>, Image)> {
+    fn load_images(ctx: &mut Context) -> (Vec<Image>, Image) {
         // get abs path to  Background and Samurai directories
         let background_directory = Path::new("/Backgrounds/dojo.png");
         let samurai_directory = {
@@ -67,13 +61,13 @@ impl MainState {
             samurai_images.push(Image::new(ctx, path).unwrap());
         }
 
-        Some((samurai_images, background_image))
+        (samurai_images, background_image)
     }
 }
 
 impl EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        // self.player.update(_ctx)?;
+        self.game_match.update().unwrap();
 
         Ok(())
     }
@@ -107,11 +101,11 @@ impl EventHandler for MainState {
         _keymods: KeyMods,
         _repeat: bool,
     ) {
-        // self.player.key_down_event(keycode, _keymods, _repeat);
+        self.game_match.key_down_event(keycode, _keymods, _repeat);
     }
 
-    fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods) {
-        // self.player.key_up_event(keycode, _keymods);
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, keymods: KeyMods) {
+        self.game_match.key_up_event(keycode, keymods);
     }
 }
 

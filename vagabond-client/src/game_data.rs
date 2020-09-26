@@ -9,11 +9,11 @@ use cgmath::Vector2;
 
 use serde::{Deserialize, Serialize};
 
-// used with all entities (user controlled or not)
-pub trait Actor {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult;
-    fn draw(&mut self, ctx: &mut Context) -> GameResult;
-}
+const SCREEN_WIDTH:f32 = 800.0;
+const SCREEN_HEIGHT:f32 = 600.0;
+const TILE_SIZE:f32 = 32.0;
+const SCALE:f32 = 5.5;
+
 
 // user controlled entities require this
 pub trait ControlledActor {
@@ -60,7 +60,7 @@ impl<T> Point2<T> {
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct Entity {
-    id: u8,           // id will be removed... game match will handle id's instead
+    id: usize,           // id will be removed... game match will handle id's instead
     facing: Action,   // Left or Right
     movement: Action, // Still or Moving
     stance: Action,   // Attacking, Still, or Blocking
@@ -70,29 +70,61 @@ pub struct Entity {
     scale: Point2<f32>, // make changes to reflect in server code because right now that is reflected as a f32 only
 }
 impl Entity {
-    pub fn new() -> Entity {
+    pub fn new(id: usize) -> Entity {
+        let position = match id {
+            0 => Point2::<f32>::new(20.0*SCALE, SCREEN_HEIGHT-(TILE_SIZE*SCALE)),
+            1 => Point2::<f32>::new(SCREEN_WIDTH-(20.0*SCALE), SCREEN_HEIGHT-(TILE_SIZE*SCALE)),
+            _ => Point2::<f32>::new(0.0, 0.0)
+        };
+
         Entity {
-            id: 0,
+            id: id,
             facing: Action::Right,   // Left or Right
             movement: Action::Still, // Still or Moving
             stance: Action::Still,   // Attacking, Still, or Blocking
             jumping: Action::Still,  // Jumping, Falling, or Still
-            pos: Point2::<f32>::new(0.0, 0.0),
+            pos: position,
             vel: Point2::<f32>::new(0.0, 0.0),
-            scale: Point2::<f32>::new(3.5, 3.5),
+            scale: Point2::<f32>::new(SCALE, SCALE),
         }
+    }
+
+    pub fn update(&mut self) -> GameResult {
+
+        // update velocity
+        self.vel.x = match self.movement {
+            Action::Moving => {
+                match self.facing {
+                    Action::Left => -1.0,
+                    Action::Right => 1.0,
+                    _ => 0.0 // This will never happen
+                }
+            },
+            Action::Still => 0.0,
+            _ => 0.0 // This will never happen
+        };
+        // TODO: Add in jumping
+
+        // update position
+        self.pos.x += self.vel.x;
+        self.pos.y += self.vel.y;
+
+        Ok(())
     }
 
     pub fn draw(&self, ctx: &mut Context, entity_assets: &Vec<Image>) {
         // set the draw params
-        let draw_param = graphics::DrawParam::new().dest(self.pos.as_mint_point()).scale(self.scale.as_mint_vector());
+        let mut draw_param = graphics::DrawParam::new().dest(self.pos.as_mint_point()).scale(self.scale.as_mint_vector());
+        if self.id == 1 {
+            draw_param = draw_param.scale(Vector2::new(-self.scale.x, self.scale.y)).color(Color::new(1.0, 0.25, 1.0, 1.0));
+        }
 
         graphics::draw(ctx, &entity_assets[0], draw_param).unwrap();
     }
 
     // might be used in the future for handling entity updates from the server
     #[allow(dead_code)]
-    pub fn update_data(&mut self, id: u8, entity: Entity) {
+    pub fn update_data(&mut self, id: usize, entity: Entity) {
         self.id = id;
         self.facing = entity.facing;
         self.movement = entity.movement;
@@ -104,76 +136,60 @@ impl Entity {
     }
 }
 
-// pub struct Player {
-//     pos: Point2<f32>,
-//     vel: Point2<f32>,
-//     size: f32,
-// }
-
-// impl Player {
-//     pub fn new(pos: Point2<f32>, vel: Point2<f32>, size: f32) -> Player {
-//         Player { pos, vel, size }
-//     }
-// }
-
-// impl Entity for Player {
-//     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-//         self.pos.x += self.vel.x;
-//         self.pos.y += self.vel.y;
-
-//         // it worked
-//         Ok(())
-//     }
-
-//     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-//         let circle = graphics::Mesh::new_circle(
-//             ctx,
-//             graphics::DrawMode::fill(),
-//             self.pos,
-//             self.size,
-//             1.0,
-//             graphics::WHITE,
-//         )?;
-//         graphics::draw(ctx, &circle, (self.pos,))?;
-
-//         // it worked
-//         Ok(())
-//     }
-
-//     fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
-//         match keycode {
-//             KeyCode::W => self.vel.y = -1.0, //negative y vel makes things move up
-//             KeyCode::S => self.vel.y = 1.0,
-//             KeyCode::A => self.vel.x = -1.0,
-//             KeyCode::D => self.vel.x = 1.0,
-//             _ => (),
-//         }
-//     }
-
-//     fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods) {
-//         match keycode {
-//             KeyCode::W | KeyCode::S => self.vel.y = 0.0,
-//             KeyCode::A | KeyCode::D => self.vel.x = 0.0,
-//             _ => (),
-//         }
-//     }
-// }
+impl ControlledActor for Entity {
+    fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+        match keycode {
+            // KeyCode::W => self.vel.y = -1.0, //negative y vel makes things move up
+            // KeyCode::S => self.vel.y = 1.0,
+            KeyCode::A => { // moving left
+                self.movement = Action::Moving;
+                self.facing = Action::Left;
+            },
+            KeyCode::D => { // moving right
+                self.movement = Action::Moving;
+                self.facing = Action::Right;
+            },
+            _ => (),
+        }
+    }
+    fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods) {
+        match keycode {
+            KeyCode::A => {
+                self.movement = Action::Still;
+            },
+            KeyCode::D => {
+                self.movement = Action::Still;
+            },
+            _ => (),
+        }
+    }
+}
 
 pub struct GameMatch {
-    pub id: u8,
+    pub id: usize,
     pub entities: Vec<Entity>,
 }
 
 impl GameMatch {
     pub fn new() -> GameMatch {
-        let ent = Entity::new();
-        let ent1 = Entity::new();
+        let ent = Entity::new(0);
+        let ent1 = Entity::new(1);
         let entity_vector = vec![ent, ent1];
         GameMatch {
             id: 0,
             entities: entity_vector,
         }
     }
+
+    pub fn update(&mut self) -> GameResult {
+        // update entities
+        for entity in &mut self.entities {
+            entity.update().unwrap();
+        }
+
+        Ok(())
+    }
+
     pub fn draw(&mut self, ctx: &mut Context, entity_assets: &Vec<Image>) -> GameResult {
         // draw entities
         for entity in &self.entities {
@@ -181,6 +197,15 @@ impl GameMatch {
         }
 
         Ok(())
+    }
+}
+
+impl ControlledActor for GameMatch {
+    fn key_down_event(&mut self, keycode: KeyCode, keymods: KeyMods, repeat: bool) {
+        &self.entities[self.id].key_down_event(keycode, keymods, repeat);
+    }
+    fn key_up_event(&mut self, keycode: KeyCode, keymods: KeyMods) {
+        &self.entities[self.id].key_up_event(keycode, keymods);
     }
 }
 
