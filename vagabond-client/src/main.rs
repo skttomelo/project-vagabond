@@ -25,7 +25,7 @@ use game_data::{ControlledActor, GameMatch, SCREEN_HEIGHT, SCREEN_WIDTH};
 struct MainState {
     game_match: GameMatch,
     entity_assets: Vec<Image>,
-    background_asset: Image,
+    background_assets: Vec<Image>,
     server: Option<TcpStream>,
 }
 
@@ -33,20 +33,20 @@ impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let gm = GameMatch::new();
 
-        let (entity_assets, background_asset) = MainState::load_images(ctx);
+        let (entity_assets, background_assets) = MainState::load_images(ctx);
 
         let s = MainState {
             game_match: gm,
             entity_assets: entity_assets,
-            background_asset: background_asset,
+            background_assets: background_assets,
             server: None,
         };
         Ok(s)
     }
 
-    fn load_images(ctx: &mut Context) -> (Vec<Image>, Image) {
+    fn load_images(ctx: &mut Context) -> (Vec<Image>, Vec<Image>) {
         // get abs path to  Background and Samurai directories
-        let background_directory = Path::new("/Backgrounds/dojo.png");
+        let mut background_directory = Path::new("/Backgrounds/dojo.png");
         let samurai_directory = {
             let mut path = PathBuf::from("./resources");
             path = path.canonicalize().unwrap();
@@ -55,7 +55,11 @@ impl MainState {
         };
 
         // load background image
-        let background_image = Image::new(ctx, background_directory).unwrap();
+        let mut background_images: Vec<Image> = Vec::new();
+        background_images.push(Image::new(ctx, &background_directory).unwrap());
+
+        background_directory = Path::new("/Backgrounds/dojo_inside.png");
+        background_images.push(Image::new(ctx, background_directory).unwrap());
 
         // load samurai images
         let mut samurai_images: Vec<Image> = Vec::new();
@@ -67,7 +71,7 @@ impl MainState {
             samurai_images.push(Image::new(ctx, path).unwrap());
         }
 
-        (samurai_images, background_image)
+        (samurai_images, background_images)
     }
 }
 
@@ -84,7 +88,7 @@ impl EventHandler for MainState {
         // draw background
         graphics::draw(
             ctx,
-            &self.background_asset,
+            &self.background_assets[1],
             graphics::DrawParam::new()
                 .dest(Point2::<f32>::new(0.0, 0.0))
                 .scale(Vector2::<f32>::new(4.0, 4.0)),

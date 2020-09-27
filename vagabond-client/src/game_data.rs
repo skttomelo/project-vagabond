@@ -157,7 +157,7 @@ impl Entity {
 }
 
 impl ControlledActor for Entity {
-    fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+    fn key_down_event(&mut self, keycode: KeyCode, keymods: KeyMods, _repeat: bool) {
         match keycode {
             KeyCode::Space => self.stance = Action::Attacking,
             KeyCode::Left => {
@@ -169,15 +169,25 @@ impl ControlledActor for Entity {
                 self.facing = Action::Right;
             }
             _ => (),
-        }
+        };
+
+        match keymods {
+            KeyMods::SHIFT => self.stance = Action::Blocking,
+            _ => (),
+        };
     }
-    fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods) {
+    fn key_up_event(&mut self, keycode: KeyCode, keymods: KeyMods) {
         match keycode {
             KeyCode::Space => self.stance = Action::Still,
             KeyCode::Left => self.moving_left = false,
             KeyCode::Right => self.moving_right = false,
             _ => (),
-        }
+        };
+
+        match keymods {
+            KeyMods::SHIFT => self.stance = Action::Still,
+            _ => (),
+        };
     }
 }
 
