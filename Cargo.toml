@@ -15,14 +15,14 @@ ggez = "0.5.1"
 # Initial testing for communicating with the server
 [[bin]]
 name = "basic-client"
-path = "basic-client/src/main.rs"
+path = "basic_client/src/main.rs"
 
 # Actual game client for playing
 [[bin]]
 name = "client"
-path = "vagabond-client/src/main.rs"
+path = "vagabond_client/src/main.rs"
 
 # Server for handling connections from players and running the match
 [[bin]]
 name = "server"
-path = "vagabond-server/src/main.rs"
+path = "vagabond_server/src/main.rs"

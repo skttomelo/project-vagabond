@@ -2,17 +2,24 @@ use ggez;
 use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::graphics::Color; // will be used to depict damage and enemy color
-use ggez::graphics::Image;
+use ggez::graphics::{DrawParam, Image};
 use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
 
 use serde::{Deserialize, Serialize};
 
+use std::time::Duration;
+
+#[path = "animate.rs"]
+mod animate;
+use animate::Animator;
+
+pub const SCALE: f32 = 5.5;
+pub const TILE_SIZE: f32 = 32.0;
 pub const SCREEN_WIDTH: f32 = 800.0;
 pub const SCREEN_HEIGHT: f32 = 600.0;
-const TILE_SIZE: f32 = 32.0;
-const SCALE: f32 = 5.5;
+
 const PLAYER_TWO_COLOR: Color = Color::new(1.0, 0.5, 0.0, 1.0);
 
 // user controlled entities require this
@@ -57,7 +64,8 @@ impl<T> Point2<T> {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+// Serialize, Deserialize
+#[derive(Clone, Copy, Debug)]
 pub struct Entity {
     id: usize,      // id will be removed... game match will handle id's instead
     facing: Action, // Left or Right
@@ -65,6 +73,7 @@ pub struct Entity {
     moving_right: bool,
     stance: Action,  // Attacking, Still, or Blocking
     jumping: Action, // Jumping, Falling, or Still
+    animator: Animator,
     pos: Point2<f32>,
     vel: Point2<f32>,
     scale: Point2<f32>, // make changes to reflect in server code because right now that is reflected as a f32 only
@@ -88,6 +97,7 @@ impl Entity {
             stance: Action::Still,  // Attacking, Still, or Blocking
             jumping: Action::Still, // Jumping, Falling, or Still
             pos: position,
+            animator: Animator::new(3, Duration::from_millis(188)),
             vel: Point2::<f32>::new(0.0, 0.0),
             scale: Point2::<f32>::new(SCALE, SCALE),
         }
@@ -96,10 +106,13 @@ impl Entity {
     pub fn update(&mut self) -> GameResult {
         // update velocity
         self.vel.x = if self.moving_right {
+            self.animator.update();
             SCALE / 2.0
         } else if self.moving_left {
+            self.animator.update();
             -SCALE / 2.0
         } else {
+            self.animator.end();
             0.0
         };
         // TODO: Add in jumping
@@ -111,32 +124,52 @@ impl Entity {
         Ok(())
     }
 
-    pub fn draw(&self, ctx: &mut Context, entity_assets: &Vec<Image>) -> GameResult {
-        // set the draw params
-        let mut draw_param = graphics::DrawParam::new()
-            .dest(self.pos.as_mint_point())
-            .scale(self.scale.as_mint_vector());
+    /***************************************************************************************
+     * TODO: factor out calculations and assignments to update function from draw function *
+     ***************************************************************************************/
+    pub fn draw(&self, ctx: &mut Context, entity_spritesheet: &Image, entity_drawparams: &Vec<DrawParam>) -> GameResult {
+        let mut draw_param_index = 0usize;
+        // // set the draw params
+        // let mut draw_param = graphics::DrawParam::new()
+        //     .dest(self.pos.as_mint_point());
+        // if self.id == 1 {
+        //     draw_param = draw_param
+        //         .scale(Vector2::new(-self.scale.x, self.scale.y))
+        //         .color(PLAYER_TWO_COLOR);
+        // }
+
+        // movement animation
+        if self.moving_left || self.moving_right {
+            // TODO add movement animation
+            match self.facing {
+                Action::Right => {
+                    // moving to the right
+                    draw_param_index = 3+self.animator.current_frame();
+                },
+                Action::Left => {
+                    // moving to the left
+                    draw_param_index = 5-self.animator.current_frame();
+                },
+                _ => (),
+            };
+        }else {
+            // stances
+            draw_param_index = match self.stance {
+                Action::Blocking => 0,
+                Action::Attacking => 1,
+                Action::Still => 2,
+                _ => 2, // because we are doing nothing
+            };
+        }
+        
+        let mut draw_param = entity_drawparams[draw_param_index].dest(self.pos.as_mint_point());
         if self.id == 1 {
             draw_param = draw_param
                 .scale(Vector2::new(-self.scale.x, self.scale.y))
                 .color(PLAYER_TWO_COLOR);
         }
 
-        // draw stance / animation depending on Action
-        if self.moving_left || self.moving_right {
-            // TODO add movement animation
-            match self.facing {
-                _ => (),
-            };
-        }
-
-        // stances
-        match self.stance {
-            Action::Blocking => graphics::draw(ctx, &entity_assets[0], draw_param).unwrap(),
-            Action::Attacking => graphics::draw(ctx, &entity_assets[5], draw_param).unwrap(),
-            Action::Still => graphics::draw(ctx, &entity_assets[2], draw_param).unwrap(),
-            _ => (),
-        };
+        graphics::draw(ctx, entity_spritesheet, draw_param).unwrap();
 
         Ok(())
     }
@@ -216,10 +249,10 @@ impl GameMatch {
         Ok(())
     }
 
-    pub fn draw(&mut self, ctx: &mut Context, entity_assets: &Vec<Image>) -> GameResult {
+    pub fn draw(&mut self, ctx: &mut Context, entity_spritesheet: &Image, entity_drawparams: &Vec<DrawParam>) -> GameResult {
         // draw entities
         for entity in &self.entities {
-            entity.draw(ctx, entity_assets).unwrap();
+            entity.draw(ctx, entity_spritesheet, entity_drawparams).unwrap();
         }
 
         Ok(())
@@ -236,7 +269,8 @@ impl ControlledActor for GameMatch {
 }
 
 // data received from server
-#[derive(Deserialize, Debug)]
+// Deserialize
+#[derive(Debug)]
 pub struct GameMatchServer {
     pub entities: Vec<Entity>,
 }

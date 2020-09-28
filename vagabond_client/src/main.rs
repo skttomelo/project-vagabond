@@ -2,7 +2,7 @@ use ggez;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::graphics::Image;
+use ggez::graphics::{Image, Rect, DrawParam};
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::net::TcpStream;
 
 mod game_data;
-use game_data::{ControlledActor, GameMatch, SCREEN_HEIGHT, SCREEN_WIDTH};
+use game_data::{ControlledActor, GameMatch, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE, SCALE};
 
 /*************************************************************
  *  TODO: Place all images into a spritesheet and subdivide  *
@@ -24,7 +24,8 @@ use game_data::{ControlledActor, GameMatch, SCREEN_HEIGHT, SCREEN_WIDTH};
 
 struct MainState {
     game_match: GameMatch,
-    entity_assets: Vec<Image>,
+    entity_spritesheet: Image,
+    entity_drawparams: Vec<DrawParam>,
     background_assets: Vec<Image>,
     server: Option<TcpStream>,
 }
@@ -33,26 +34,28 @@ impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let gm = GameMatch::new();
 
-        let (entity_assets, background_assets) = MainState::load_images(ctx);
+        let (entity_spritesheet, entity_drawparams, background_assets) = MainState::load_images(ctx);
 
         let s = MainState {
             game_match: gm,
-            entity_assets: entity_assets,
+            entity_spritesheet: entity_spritesheet,
+            entity_drawparams: entity_drawparams,
             background_assets: background_assets,
             server: None,
         };
         Ok(s)
     }
 
-    fn load_images(ctx: &mut Context) -> (Vec<Image>, Vec<Image>) {
+    fn load_images(ctx: &mut Context) -> (Image, Vec<DrawParam>, Vec<Image>) {
         // get abs path to  Background and Samurai directories
         let mut background_directory = Path::new("/Backgrounds/dojo.png");
-        let samurai_directory = {
-            let mut path = PathBuf::from("./resources");
-            path = path.canonicalize().unwrap();
-            path.push("Samurai");
-            path
-        };
+        // let samurai_directory = {
+        //     let mut path = PathBuf::from("./resources");
+        //     path = path.canonicalize().unwrap();
+        //     path.push("Samurai");
+        //     path
+        // };
+        let samurai_directory = Path::new("/Samurai/samurai_spritesheet.png");
 
         // load background image
         let mut background_images: Vec<Image> = Vec::new();
@@ -62,16 +65,34 @@ impl MainState {
         background_images.push(Image::new(ctx, background_directory).unwrap());
 
         // load samurai images
-        let mut samurai_images: Vec<Image> = Vec::new();
+        let samurai_image = Image::new(ctx, samurai_directory).unwrap();
+        let mut samurai_drawparams: Vec<DrawParam> = Vec::new();
+        
+        let mut counter = 0;
+        let image_width = samurai_image.width();
+        let scale = Vector2::<f32>::new(SCALE, SCALE);
+        let width = TILE_SIZE / image_width as f32;
+        let increment = image_width / 6; // we have six frames inside of the spritesheet
+        while counter < image_width {
+            // location in spritesheet
+            let x = counter as f32 / image_width as f32;
+            let frame = Rect::new(x, 0.0, width, 1.0);
+            // we add scaling to the images so we don't deal with the calculations later
+            let draw_param = DrawParam::new().src(frame).scale(scale);
 
-        for entry in samurai_directory.read_dir().unwrap() {
-            let entry = entry.unwrap();
-            let path = Path::new("/Samurai").join(entry.file_name());
-
-            samurai_images.push(Image::new(ctx, path).unwrap());
+            samurai_drawparams.push(draw_param);
+            //increment
+            counter += increment;
         }
 
-        (samurai_images, background_images)
+        // for entry in samurai_directory.read_dir().unwrap() {
+        //     let entry = entry.unwrap();
+        //     let path = Path::new("/Samurai").join(entry.file_name());
+
+        //     samurai_images.push(Image::new(ctx, path).unwrap());
+        // }
+
+        (samurai_image, samurai_drawparams, background_images)
     }
 }
 
@@ -97,7 +118,7 @@ impl EventHandler for MainState {
 
         // draw everything else
         self.game_match
-            .draw(ctx, &self.entity_assets)
+            .draw(ctx, &self.entity_spritesheet, &self.entity_drawparams)
             .expect("Draw call for GameMatch failed");
 
         graphics::present(ctx)?;
