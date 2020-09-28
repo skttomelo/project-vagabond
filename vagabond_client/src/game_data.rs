@@ -127,7 +127,12 @@ impl Entity {
     /***************************************************************************************
      * TODO: factor out calculations and assignments to update function from draw function *
      ***************************************************************************************/
-    pub fn draw(&self, ctx: &mut Context, entity_spritesheet: &Image, entity_drawparams: &Vec<DrawParam>) -> GameResult {
+    pub fn draw(
+        &self,
+        ctx: &mut Context,
+        entity_spritesheet: &Image,
+        entity_drawparams: &Vec<DrawParam>,
+    ) -> GameResult {
         let mut draw_param_index = 0usize;
         // // set the draw params
         // let mut draw_param = graphics::DrawParam::new()
@@ -144,15 +149,15 @@ impl Entity {
             match self.facing {
                 Action::Right => {
                     // moving to the right
-                    draw_param_index = 3+self.animator.current_frame();
-                },
+                    draw_param_index = 3 + self.animator.current_frame();
+                }
                 Action::Left => {
                     // moving to the left
-                    draw_param_index = 5-self.animator.current_frame();
-                },
+                    draw_param_index = 5 - self.animator.current_frame();
+                }
                 _ => (),
             };
-        }else {
+        } else {
             // stances
             draw_param_index = match self.stance {
                 Action::Blocking => 0,
@@ -161,7 +166,7 @@ impl Entity {
                 _ => 2, // because we are doing nothing
             };
         }
-        
+
         let mut draw_param = entity_drawparams[draw_param_index].dest(self.pos.as_mint_point());
         if self.id == 1 {
             draw_param = draw_param
@@ -249,10 +254,17 @@ impl GameMatch {
         Ok(())
     }
 
-    pub fn draw(&mut self, ctx: &mut Context, entity_spritesheet: &Image, entity_drawparams: &Vec<DrawParam>) -> GameResult {
+    pub fn draw(
+        &mut self,
+        ctx: &mut Context,
+        entity_spritesheet: &Image,
+        entity_drawparams: &Vec<DrawParam>,
+    ) -> GameResult {
         // draw entities
         for entity in &self.entities {
-            entity.draw(ctx, entity_spritesheet, entity_drawparams).unwrap();
+            entity
+                .draw(ctx, entity_spritesheet, entity_drawparams)
+                .unwrap();
         }
 
         Ok(())

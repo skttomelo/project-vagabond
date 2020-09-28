@@ -2,7 +2,7 @@ use ggez;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::graphics::{Image, Rect, DrawParam};
+use ggez::graphics::{DrawParam, Image, Rect};
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::net::TcpStream;
 
 mod game_data;
-use game_data::{ControlledActor, GameMatch, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE, SCALE};
+use game_data::{ControlledActor, GameMatch, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
 
 /*************************************************************
  *  TODO: Place all images into a spritesheet and subdivide  *
@@ -34,7 +34,8 @@ impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let gm = GameMatch::new();
 
-        let (entity_spritesheet, entity_drawparams, background_assets) = MainState::load_images(ctx);
+        let (entity_spritesheet, entity_drawparams, background_assets) =
+            MainState::load_images(ctx);
 
         let s = MainState {
             game_match: gm,
@@ -67,7 +68,7 @@ impl MainState {
         // load samurai images
         let samurai_image = Image::new(ctx, samurai_directory).unwrap();
         let mut samurai_drawparams: Vec<DrawParam> = Vec::new();
-        
+
         let mut counter = 0;
         let image_width = samurai_image.width();
         let scale = Vector2::<f32>::new(SCALE, SCALE);

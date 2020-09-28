@@ -26,10 +26,10 @@ impl Animator {
         if self.current_time == None {
             self.current_time = Some(Instant::now());
         }
-        
+
         let instant = Instant::now();
         let duration_since = instant.duration_since(self.current_time.unwrap());
-        
+
         // is it time to change frames? if not return out of fn
         if &duration_since < &self.frame_duration {
             return;
