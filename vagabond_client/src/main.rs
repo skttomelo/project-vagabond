@@ -2,7 +2,7 @@ use ggez;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::graphics::{DrawParam, Image, Rect};
+use ggez::graphics::{DrawParam, FilterMode, Image, Rect};
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
@@ -48,25 +48,30 @@ impl MainState {
     }
 
     fn load_images(ctx: &mut Context) -> (Image, Vec<DrawParam>, Vec<Image>) {
-        // get abs path to  Background and Samurai directories
+        // get path to Background and Samurai directories
         let mut background_directory = Path::new("/Backgrounds/dojo.png");
-        // let samurai_directory = {
-        //     let mut path = PathBuf::from("./resources");
-        //     path = path.canonicalize().unwrap();
-        //     path.push("Samurai");
-        //     path
-        // };
+
         let samurai_directory = Path::new("/Samurai/samurai_spritesheet.png");
 
         // load background image
         let mut background_images: Vec<Image> = Vec::new();
-        background_images.push(Image::new(ctx, &background_directory).unwrap());
+
+        let mut bg = Image::new(ctx, &background_directory).unwrap();
+        bg.set_filter(FilterMode::Nearest); // remove blur
+        background_images.push(bg);
 
         background_directory = Path::new("/Backgrounds/dojo_inside.png");
+        let mut bg = Image::new(ctx, &background_directory).unwrap();
+        bg.set_filter(FilterMode::Nearest); //remove blur
+        background_images.push(bg);
+        
         background_images.push(Image::new(ctx, background_directory).unwrap());
 
         // load samurai images
-        let samurai_image = Image::new(ctx, samurai_directory).unwrap();
+        let mut samurai_image = Image::new(ctx, samurai_directory).unwrap();
+        // Nearest removes blur as well as fixes the bleed over with the spritesheet
+        samurai_image.set_filter(FilterMode::Nearest);
+
         let mut samurai_drawparams: Vec<DrawParam> = Vec::new();
 
         let mut counter = 0;
