@@ -20,7 +20,7 @@ pub const TILE_SIZE: f32 = 32.0;
 pub const SCREEN_WIDTH: f32 = 800.0;
 pub const SCREEN_HEIGHT: f32 = 600.0;
 
-const PLAYER_TWO_COLOR: Color = Color::new(1.0, 0.5, 0.0, 1.0);
+const PLAYER_TWO_COLOR: Color = Color::new(1.0, 0.5, 1.0, 1.0);
 
 // user controlled entities require this
 pub trait ControlledActor {
@@ -134,18 +134,10 @@ impl Entity {
         entity_drawparams: &Vec<DrawParam>,
     ) -> GameResult {
         let mut draw_param_index = 0usize;
-        // // set the draw params
-        // let mut draw_param = graphics::DrawParam::new()
-        //     .dest(self.pos.as_mint_point());
-        // if self.id == 1 {
-        //     draw_param = draw_param
-        //         .scale(Vector2::new(-self.scale.x, self.scale.y))
-        //         .color(PLAYER_TWO_COLOR);
-        // }
 
         // movement animation
         if self.moving_left || self.moving_right {
-            // TODO add movement animation
+            // TODO add movement animation (done)
             match self.facing {
                 Action::Right => {
                     // moving to the right
