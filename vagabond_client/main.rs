@@ -64,7 +64,7 @@ impl MainState {
         let mut bg = Image::new(ctx, &background_directory).unwrap();
         bg.set_filter(FilterMode::Nearest); //remove blur
         background_images.push(bg);
-        
+
         background_images.push(Image::new(ctx, background_directory).unwrap());
 
         // load samurai images

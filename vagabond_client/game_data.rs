@@ -15,6 +15,10 @@ use std::time::Duration;
 mod animate;
 use animate::Animator;
 
+#[path = "geometry.rs"]
+mod geometry;
+use geometry::{Point2, Rect};
+
 pub const SCALE: f32 = 5.5;
 pub const TILE_SIZE: f32 = 32.0;
 pub const SCREEN_WIDTH: f32 = 800.0;
@@ -41,26 +45,25 @@ enum Action {
     Damaged,
 }
 
+// helper struct for cleaning up Entity struct
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
-pub struct Point2<T> {
-    pub x: T,
-    pub y: T,
+struct Entity_Actions {
+    pub facing: Action, // Left or Right
+    pub moving_left: bool,
+    pub moving_right: bool,
+    pub stance: Action,  // Attacking, Still, or Blocking
+    pub jumping: Action, // Jumping, Falling, or Still
 }
-impl<T> Point2<T> {
-    fn new(x: T, y: T) -> Point2<T> {
-        Point2::<T> { x: x, y: y }
-    }
-    fn as_mint_point(&self) -> cgmath::Point2<T>
-    where
-        T: Copy,
-    {
-        cgmath::Point2::<T>::new(self.x, self.y)
-    }
-    fn as_mint_vector(&self) -> Vector2<T>
-    where
-        T: Copy,
-    {
-        Vector2::<T>::new(self.x, self.y)
+
+impl Entity_Actions {
+    pub fn new(facing: Action) -> Entity_Actions {
+        Entity_Actions {
+            facing: facing,
+            moving_left: false,
+            moving_right: false,
+            stance: Action::Still,
+            jumping: Action::Still,
+        }
     }
 }
 
@@ -68,47 +71,73 @@ impl<T> Point2<T> {
 #[derive(Clone, Copy, Debug)]
 pub struct Entity {
     id: usize,      // id will be removed... game match will handle id's instead
-    facing: Action, // Left or Right
-    moving_left: bool,
-    moving_right: bool,
-    stance: Action,  // Attacking, Still, or Blocking
-    jumping: Action, // Jumping, Falling, or Still
+    entity_actions: Entity_Actions,
     animator: Animator,
-    pos: Point2<f32>,
-    vel: Point2<f32>,
-    scale: Point2<f32>, // make changes to reflect in server code because right now that is reflected as a f32 only
+    pos: Point2,
+    vel: Point2,
+    pub bound: Rect,
+    pub attack_bound: Rect,
+    scale: Point2, // make changes to reflect in server code because right now that is reflected as a f32 only
 }
 impl Entity {
     pub fn new(id: usize) -> Entity {
+        // entity location
         let position = match id {
-            0 => Point2::<f32>::new(20.0 * SCALE, SCREEN_HEIGHT - (TILE_SIZE * SCALE)),
-            1 => Point2::<f32>::new(
+            0 => Point2::new(20.0 * SCALE, SCREEN_HEIGHT - (TILE_SIZE * SCALE)),
+            1 => Point2::new(
                 SCREEN_WIDTH - (20.0 * SCALE),
                 SCREEN_HEIGHT - (TILE_SIZE * SCALE),
             ),
-            _ => Point2::<f32>::new(0.0, 0.0),
+            _ => Point2::new(0.0, 0.0),
+        };
+
+        // Rect.top_left location
+        let bound_top_left_position = position.clone();
+
+        // Rect.bottom_right location
+        let bound_bottom_right_position = Point2::new(
+            bound_top_left_position.x + (TILE_SIZE * SCALE),
+            bound_top_left_position.y + (TILE_SIZE * SCALE),
+        );
+
+        // Attack Rect.top_left location
+        // values are hard coded here unfortunately
+        let attack_top_left_position = Point2::new(
+            bound_top_left_position.x + (20.0 * SCALE),
+            bound_top_left_position.y + (6.0 * SCALE),
+        );
+
+        // Attack Rect.bottom_right location
+        // values are hard coded here unfortunately
+        let attack_bottom_right_position = Point2::new(
+            bound_bottom_right_position.x,
+            bound_top_left_position.y - (17.0 * SCALE),
+        );
+
+        let facing = match id {
+            0 => Action::Right,
+            1 => Action::Left,
+            _ => Action::Right
         };
 
         Entity {
             id: id,
-            facing: Action::Right, // Left or Right
-            moving_left: false,
-            moving_right: false,
-            stance: Action::Still,  // Attacking, Still, or Blocking
-            jumping: Action::Still, // Jumping, Falling, or Still
+            entity_actions: Entity_Actions::new(facing),
             pos: position,
             animator: Animator::new(3, Duration::from_millis(188)),
-            vel: Point2::<f32>::new(0.0, 0.0),
-            scale: Point2::<f32>::new(SCALE, SCALE),
+            vel: Point2::new(0.0, 0.0),
+            bound: Rect::new(bound_top_left_position, bound_bottom_right_position),
+            attack_bound: Rect::new(attack_top_left_position, attack_bottom_right_position),
+            scale: Point2::new(SCALE, SCALE),
         }
     }
 
     pub fn update(&mut self) -> GameResult {
         // update velocity
-        self.vel.x = if self.moving_right {
+        self.vel.x = if self.entity_actions.moving_right {
             self.animator.update();
             SCALE / 2.0
-        } else if self.moving_left {
+        } else if self.entity_actions.moving_left {
             self.animator.update();
             -SCALE / 2.0
         } else {
@@ -120,6 +149,8 @@ impl Entity {
         // update position
         self.pos.x += self.vel.x;
         self.pos.y += self.vel.y;
+
+        self.bound.change_location_vel(&self.vel);
 
         Ok(())
     }
@@ -136,9 +167,9 @@ impl Entity {
         let mut draw_param_index = 0usize;
 
         // movement animation
-        if self.moving_left || self.moving_right {
+        if self.entity_actions.moving_left || self.entity_actions.moving_right {
             // TODO add movement animation (done)
-            match self.facing {
+            match self.entity_actions.facing {
                 Action::Right => {
                     // moving to the right
                     draw_param_index = 3 + self.animator.current_frame();
@@ -151,7 +182,7 @@ impl Entity {
             };
         } else {
             // stances
-            draw_param_index = match self.stance {
+            draw_param_index = match self.entity_actions.stance {
                 Action::Blocking => 0,
                 Action::Attacking => 1,
                 Action::Still => 2,
@@ -175,11 +206,11 @@ impl Entity {
     #[allow(dead_code)]
     pub fn update_data(&mut self, id: usize, entity: Entity) {
         self.id = id;
-        self.facing = entity.facing;
-        self.moving_left = entity.moving_left;
-        self.moving_right = entity.moving_right;
-        self.stance = entity.stance;
-        self.jumping = entity.jumping;
+        self.entity_actions.facing = entity.entity_actions.facing;
+        self.entity_actions.moving_left = entity.entity_actions.moving_left;
+        self.entity_actions.moving_right = entity.entity_actions.moving_right;
+        self.entity_actions.stance = entity.entity_actions.stance;
+        self.entity_actions.jumping = entity.entity_actions.jumping;
         self.pos = entity.pos;
         self.vel = entity.vel;
         self.scale = entity.scale;
@@ -189,33 +220,33 @@ impl Entity {
 impl ControlledActor for Entity {
     fn key_down_event(&mut self, keycode: KeyCode, keymods: KeyMods, _repeat: bool) {
         match keycode {
-            KeyCode::Space => self.stance = Action::Attacking,
+            KeyCode::Space => self.entity_actions.stance = Action::Attacking,
             KeyCode::Left => {
-                self.moving_left = true;
-                self.facing = Action::Left;
+                self.entity_actions.moving_left = true;
+                self.entity_actions.facing = Action::Left;
             }
             KeyCode::Right => {
-                self.moving_right = true;
-                self.facing = Action::Right;
+                self.entity_actions.moving_right = true;
+                self.entity_actions.facing = Action::Right;
             }
             _ => (),
         };
 
         match keymods {
-            KeyMods::SHIFT => self.stance = Action::Blocking,
+            KeyMods::SHIFT => self.entity_actions.stance = Action::Blocking,
             _ => (),
         };
     }
     fn key_up_event(&mut self, keycode: KeyCode, keymods: KeyMods) {
         match keycode {
-            KeyCode::Space => self.stance = Action::Still,
-            KeyCode::Left => self.moving_left = false,
-            KeyCode::Right => self.moving_right = false,
+            KeyCode::Space => self.entity_actions.stance = Action::Still,
+            KeyCode::Left => self.entity_actions.moving_left = false,
+            KeyCode::Right => self.entity_actions.moving_right = false,
             _ => (),
         };
 
         match keymods {
-            KeyMods::SHIFT => self.stance = Action::Still,
+            KeyMods::SHIFT => self.entity_actions.stance = Action::Still,
             _ => (),
         };
     }
