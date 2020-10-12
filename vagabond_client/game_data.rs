@@ -40,38 +40,40 @@ enum Action {
     Still,
     Jumping,
     Falling,
-    Attacking,
-    Blocking,
     Damaged,
 }
 
 // helper struct for cleaning up Entity struct
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
-struct Entity_Actions {
+struct EntityActions {
     pub facing: Action, // Left or Right
     pub moving_left: bool,
     pub moving_right: bool,
-    pub stance: Action,  // Attacking, Still, or Blocking
+    pub attacking: bool,
+    pub blocking: bool,
     pub jumping: Action, // Jumping, Falling, or Still
 }
 
-impl Entity_Actions {
-    pub fn new(facing: Action) -> Entity_Actions {
-        Entity_Actions {
+impl EntityActions {
+    pub fn new(facing: Action) -> EntityActions {
+        EntityActions {
             facing: facing,
             moving_left: false,
             moving_right: false,
-            stance: Action::Still,
+            attacking: false,
+            blocking: false,
             jumping: Action::Still,
         }
     }
 }
 
-// Serialize, Deserialize
+// Serialize, Deserialize -- not needed because there will be a struct that will be used for sending to the server that is not this
 #[derive(Clone, Copy, Debug)]
 pub struct Entity {
-    id: usize,      // id will be removed... game match will handle id's instead
-    entity_actions: Entity_Actions,
+    id: usize, // id will be removed... game match will handle id's instead
+    hp: i8,    // health of entity
+    dmg: i8,   // damage the entity can deal
+    entity_actions: EntityActions,
     animator: Animator,
     pos: Point2,
     vel: Point2,
@@ -117,12 +119,14 @@ impl Entity {
         let facing = match id {
             0 => Action::Right,
             1 => Action::Left,
-            _ => Action::Right
+            _ => Action::Right,
         };
 
         Entity {
             id: id,
-            entity_actions: Entity_Actions::new(facing),
+            hp: 5,
+            dmg: 1,
+            entity_actions: EntityActions::new(facing),
             pos: position,
             animator: Animator::new(3, Duration::from_millis(188)),
             vel: Point2::new(0.0, 0.0),
@@ -168,7 +172,6 @@ impl Entity {
 
         // movement animation
         if self.entity_actions.moving_left || self.entity_actions.moving_right {
-            // TODO add movement animation (done)
             match self.entity_actions.facing {
                 Action::Right => {
                     // moving to the right
@@ -181,17 +184,20 @@ impl Entity {
                 _ => (),
             };
         } else {
+            // not moving
             // stances
-            draw_param_index = match self.entity_actions.stance {
-                Action::Blocking => 0,
-                Action::Attacking => 1,
-                Action::Still => 2,
-                _ => 2, // because we are doing nothing
+            if self.entity_actions.blocking {
+                draw_param_index = 0;
+            } else if self.entity_actions.attacking {
+                draw_param_index = 1;
+            } else {
+                draw_param_index = 2;
             };
         }
 
         let mut draw_param = entity_drawparams[draw_param_index].dest(self.pos.as_mint_point());
         if self.id == 1 {
+            // we are facing the left and thus need to invert the scale
             draw_param = draw_param
                 .scale(Vector2::new(-self.scale.x, self.scale.y))
                 .color(PLAYER_TWO_COLOR);
@@ -209,7 +215,8 @@ impl Entity {
         self.entity_actions.facing = entity.entity_actions.facing;
         self.entity_actions.moving_left = entity.entity_actions.moving_left;
         self.entity_actions.moving_right = entity.entity_actions.moving_right;
-        self.entity_actions.stance = entity.entity_actions.stance;
+        self.entity_actions.attacking = entity.entity_actions.attacking;
+        self.entity_actions.blocking = entity.entity_actions.blocking;
         self.entity_actions.jumping = entity.entity_actions.jumping;
         self.pos = entity.pos;
         self.vel = entity.vel;
@@ -218,9 +225,9 @@ impl Entity {
 }
 
 impl ControlledActor for Entity {
-    fn key_down_event(&mut self, keycode: KeyCode, keymods: KeyMods, _repeat: bool) {
+    fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
         match keycode {
-            KeyCode::Space => self.entity_actions.stance = Action::Attacking,
+            KeyCode::Space => self.entity_actions.attacking = true,
             KeyCode::Left => {
                 self.entity_actions.moving_left = true;
                 self.entity_actions.facing = Action::Left;
@@ -229,24 +236,16 @@ impl ControlledActor for Entity {
                 self.entity_actions.moving_right = true;
                 self.entity_actions.facing = Action::Right;
             }
-            _ => (),
-        };
-
-        match keymods {
-            KeyMods::SHIFT => self.entity_actions.stance = Action::Blocking,
+            KeyCode::Down => self.entity_actions.blocking = true,
             _ => (),
         };
     }
-    fn key_up_event(&mut self, keycode: KeyCode, keymods: KeyMods) {
+    fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods) {
         match keycode {
-            KeyCode::Space => self.entity_actions.stance = Action::Still,
+            KeyCode::Space => self.entity_actions.attacking = false,
             KeyCode::Left => self.entity_actions.moving_left = false,
             KeyCode::Right => self.entity_actions.moving_right = false,
-            _ => (),
-        };
-
-        match keymods {
-            KeyMods::SHIFT => self.entity_actions.stance = Action::Still,
+            KeyCode::Down => self.entity_actions.blocking = false,
             _ => (),
         };
     }
@@ -270,6 +269,7 @@ impl GameMatch {
 
     pub fn update(&mut self) -> GameResult {
         // update entities
+        // TODO: collision check for attacking
         for entity in &mut self.entities {
             entity.update().unwrap();
         }
