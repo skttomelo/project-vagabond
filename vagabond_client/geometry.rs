@@ -23,8 +23,8 @@ impl Point2 {
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct Rect {
-    top_left: Point2,
-    bottom_right: Point2,
+    pub top_left: Point2,
+    pub bottom_right: Point2,
 }
 
 impl Rect {
@@ -44,6 +44,7 @@ impl Rect {
 
     // checks to see if two Rects are intersecting
     // using solution found here: https://www.geeksforgeeks.org/find-two-rectangles-overlap/
+    // however I had to make an adjustment because their bound check for the Y-axis was wrong
     pub fn check_bounds(self, rect: &Rect) -> bool {
         // if one rectangle is on left side of other
         if self.top_left.x >= rect.bottom_right.x || rect.top_left.x >= self.bottom_right.x {
@@ -51,7 +52,7 @@ impl Rect {
         }
 
         // if one rectangle is above other
-        if self.top_left.y <= rect.bottom_right.y || rect.top_left.y <= self.bottom_right.y {
+        if self.top_left.y >= rect.bottom_right.y || rect.top_left.y >= self.bottom_right.y {
             return false;
         }
 

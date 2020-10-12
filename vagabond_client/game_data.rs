@@ -24,6 +24,7 @@ pub const TILE_SIZE: f32 = 32.0;
 pub const SCREEN_WIDTH: f32 = 800.0;
 pub const SCREEN_HEIGHT: f32 = 600.0;
 
+const MAX_HP: u8 = 5;
 const PLAYER_TWO_COLOR: Color = Color::new(1.0, 0.5, 1.0, 1.0);
 
 // user controlled entities require this
@@ -34,7 +35,7 @@ pub trait ControlledActor {
 
 struct HealthBar {
     id: usize, // player id
-    max_hp: i8,
+    max_hp: u8,
     foreground_rectangle: graphics::Rect,
     background_rectangle: graphics::Rect,
     foreground_color: Color,
@@ -64,7 +65,7 @@ impl HealthBar {
 
         HealthBar {
             id: id,
-            max_hp: 5,
+            max_hp: MAX_HP,
             foreground_rectangle: f_rect,
             background_rectangle: b_rect,
             foreground_color: f_color,
@@ -73,7 +74,7 @@ impl HealthBar {
         }
     }
 
-    pub fn update(&mut self, current_hp: i8) {
+    pub fn update(&mut self, current_hp: u8) {
         let new_width = (self.background_rectangle.w / self.max_hp as f32) * current_hp as f32;
         self.foreground_rectangle.w = new_width;
     }
@@ -145,7 +146,7 @@ impl EntityActions {
 #[derive(Clone, Copy, Debug)]
 pub struct Entity {
     id: usize, // id will be removed... game match will handle id's instead
-    hp: i8,    // health of entity
+    hp: u8,    // health of entity
     dmg: i8,   // damage the entity can deal
     entity_actions: EntityActions,
     animator: Animator,
@@ -159,16 +160,22 @@ impl Entity {
     pub fn new(id: usize) -> Entity {
         // entity location
         let position = match id {
-            0 => Point2::new(20.0 * SCALE, SCREEN_HEIGHT - (TILE_SIZE * SCALE)),
             1 => Point2::new(
                 SCREEN_WIDTH - (20.0 * SCALE),
                 SCREEN_HEIGHT - (TILE_SIZE * SCALE),
             ),
-            _ => Point2::new(0.0, 0.0),
+            _ => Point2::new(20.0 * SCALE, SCREEN_HEIGHT - (TILE_SIZE * SCALE)),
         };
 
         // Rect.top_left location
-        let bound_top_left_position = position.clone();
+        let bound_top_left_position = match id {
+            1 => {
+                let mut pos = position.clone();
+                pos.x -= TILE_SIZE * SCALE;
+                pos
+            },
+            _ => position.clone()
+        };
 
         // Rect.bottom_right location
         let bound_bottom_right_position = Point2::new(
@@ -185,7 +192,7 @@ impl Entity {
         // Attack Rect.bottom_right location
         let attack_bottom_right_position = Point2::new(
             bound_bottom_right_position.x,
-            bound_top_left_position.y - (17.0 * SCALE),
+            bound_top_left_position.y + (17.0 * SCALE),
         );
 
         let facing = match id {
@@ -196,7 +203,7 @@ impl Entity {
 
         Entity {
             id: id,
-            hp: 5,
+            hp: MAX_HP,
             dmg: 1,
             entity_actions: EntityActions::new(facing),
             pos: position,
@@ -210,23 +217,29 @@ impl Entity {
 
     pub fn update(&mut self) -> GameResult {
         // update velocity
-        self.vel.x = if self.entity_actions.moving_right {
-            self.animator.update();
-            SCALE / 2.0
-        } else if self.entity_actions.moving_left {
-            self.animator.update();
-            -SCALE / 2.0
+        if self.entity_actions.attacking == false && self.entity_actions.blocking == false {
+            self.vel.x = if self.entity_actions.moving_right {
+                self.animator.update();
+                SCALE / 2.0
+            } else if self.entity_actions.moving_left {
+                self.animator.update();
+                -SCALE / 2.0
+            } else {
+                self.animator.end();
+                0.0
+            };
         } else {
             self.animator.end();
-            0.0
-        };
-        // TODO: Add in jumping
+            self.vel.x = 0.0;
+        }
+        // TODO: Add in jumping -- might not happen depending on time constraints
 
         // update position
         self.pos.x += self.vel.x;
         self.pos.y += self.vel.y;
 
         self.bound.translate(&self.vel);
+        self.attack_bound.translate(&self.vel);
 
         Ok(())
     }
@@ -243,7 +256,13 @@ impl Entity {
         let mut draw_param_index = 0usize;
 
         // movement animation
-        if self.entity_actions.moving_left || self.entity_actions.moving_right {
+        if self.entity_actions.attacking || self.entity_actions.blocking {
+            if self.entity_actions.blocking {
+                draw_param_index = 0;
+            } else if self.entity_actions.attacking {
+                draw_param_index = 1;
+            }
+        } else if self.entity_actions.moving_left || self.entity_actions.moving_right {
             match self.entity_actions.facing {
                 Action::Right => {
                     // moving to the right
@@ -255,16 +274,8 @@ impl Entity {
                 }
                 _ => (),
             };
-        } else {
-            // not moving
-            // stances
-            if self.entity_actions.blocking {
-                draw_param_index = 0;
-            } else if self.entity_actions.attacking {
-                draw_param_index = 1;
-            } else {
-                draw_param_index = 2;
-            };
+        } else { // not moving or attacking or blocking
+            draw_param_index = 2;
         }
 
         let mut draw_param = entity_drawparams[draw_param_index].dest(self.pos.as_mint_point());
@@ -274,6 +285,14 @@ impl Entity {
                 .scale(Vector2::new(-self.scale.x, self.scale.y))
                 .color(PLAYER_TWO_COLOR);
         }
+
+        
+        // let random_rect = graphics::Rect::new(self.bound.top_left.x, self.bound.top_left.y, TILE_SIZE*SCALE, TILE_SIZE*SCALE);
+        // let random_attack_rect = graphics::Rect::new(self.attack_bound.top_left.x, self.attack_bound.top_left.y, self.attack_bound.bottom_right.x - self.attack_bound.top_left.x, self.attack_bound.bottom_right.y - self.attack_bound.top_left.y);
+        // let random_mesh = graphics::MeshBuilder::new().rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), random_rect, Color::new(0.0,1.0,0.0,1.0)).build(ctx).unwrap();
+        // let random_attack_mesh = graphics::MeshBuilder::new().rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), random_attack_rect, Color::new(1.0,0.0,0.0,1.0)).build(ctx).unwrap();
+        // graphics::draw(ctx, &random_mesh, DrawParam::new()).unwrap();
+        // graphics::draw(ctx, &random_attack_mesh, DrawParam::new()).unwrap();
 
         graphics::draw(ctx, entity_spritesheet, draw_param).unwrap();
 
@@ -348,12 +367,29 @@ impl GameMatch {
     pub fn update(&mut self) -> GameResult {
         // update entities
         // TODO: collision check for attacking
-        for entity in &mut self.entities {
-            entity.update().unwrap();
+        self.entities[0].update().unwrap();
+        self.entities[1].update().unwrap();
+        
+        // player 1 is attacking
+        if self.entities[0].entity_actions.attacking == true && self.entities[0].entity_actions.blocking == false && self.entities[1].entity_actions.blocking == false {
+            if self.entities[0].attack_bound.check_bounds(&self.entities[1].bound) == true {
+                if self.entities[1].hp != 0 {
+                    self.entities[1].hp -= 1;
+                }
+            }
         }
 
-        self.health_bar_1.update(2);
-        self.health_bar_2.update(3);
+        // player 2 is attacking
+        if self.entities[1].entity_actions.attacking == true && self.entities[1].entity_actions.blocking == false && self.entities[0].entity_actions.blocking == false {
+            if self.entities[1].attack_bound.check_bounds(&self.entities[0].bound) == true {
+                if self.entities[0].hp != 0 {
+                    self.entities[0].hp -= 1;
+                }
+            }
+        }
+
+        self.health_bar_1.update(self.entities[0].hp);
+        self.health_bar_2.update(self.entities[1].hp);
 
 
         Ok(())
