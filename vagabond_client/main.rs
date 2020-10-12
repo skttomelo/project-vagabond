@@ -115,7 +115,7 @@ impl EventHandler for MainState {
         // draw background
         graphics::draw(
             ctx,
-            &self.background_assets[1],
+            &self.background_assets[0],
             graphics::DrawParam::new()
                 .dest(Point2::<f32>::new(0.0, 0.0))
                 .scale(Vector2::<f32>::new(4.0, 4.0)),

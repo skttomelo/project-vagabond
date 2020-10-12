@@ -33,21 +33,26 @@ pub trait ControlledActor {
 }
 
 struct HealthBar {
-    id: usize, // corresponds to the player
+    id: usize, // player id
+    max_hp: i8,
     foreground_rectangle: graphics::Rect,
     background_rectangle: graphics::Rect,
     foreground_color: Color,
     background_color: Color,
+    draw_param: DrawParam,
 }
 impl HealthBar {
     pub fn new(id: usize) -> HealthBar {
-        let width = 10.0 * SCALE;
-        let height = 3.0 * SCALE;
+        let width = match id {
+            1 => -10.0 * SCALE * 4.0,
+            _ => 10.0 * SCALE * 4.0
+        };
+        let height = 3.0 * SCALE * 2.0;
         let f_color = Color::new(1.0, 0.0, 0.0, 1.0);
         let b_color = Color::new(0.5, 0.5, 0.5, 0.5);
 
+        // id corresponds to the player
         let position = match id {
-            0 => Point2::new(0.0, 0.0),
             1 => Point2::new(SCREEN_WIDTH, 0.0),
             _ => Point2::new(0.0, 0.0)
         };
@@ -55,36 +60,47 @@ impl HealthBar {
         let f_rect = graphics::Rect::new(position.x, position.y, width, height);
         let b_rect = graphics::Rect::new(position.x, position.y, width, height);
 
+        let draw_param = DrawParam::new().src(f_rect.clone());
+
         HealthBar {
             id: id,
+            max_hp: 5,
             foreground_rectangle: f_rect,
             background_rectangle: b_rect,
             foreground_color: f_color,
             background_color: b_color,
+            draw_param: draw_param,
         }
     }
 
-    pub fn reset(&mut self) {
-        let width = 10.0 * SCALE;
-        let height = 3.0 * SCALE;
-
-        let position = match self.id {
-            1 => Point2::new(SCREEN_WIDTH - width, 0.0),
-            _ => Point2::new(0.0, 0.0)
-        };
-
-        self.foreground_rectangle = graphics::Rect::new(position.x, position.y, width, height);
-        self.background_rectangle = graphics::Rect::new(position.x, position.y, width, height);
+    pub fn update(&mut self, current_hp: i8) {
+        let new_width = (self.background_rectangle.w / self.max_hp as f32) * current_hp as f32;
+        self.foreground_rectangle.w = new_width;
     }
 
-    pub fn draw(&self) -> GameResult {
+    #[allow(dead_code)]
+    pub fn reset(&mut self) {
+
+        self.foreground_rectangle = self.background_rectangle.clone();
+        
+        self.draw_param = DrawParam::new().src(self.foreground_rectangle.clone());
+        if self.id == 1 {
+            self.draw_param = self.draw_param.scale(Vector2::<f32>::new(-1.0,1.0))
+        }
+    }
+
+    pub fn draw(&self, ctx: &mut Context) -> GameResult {
         let mut mesh_builder = graphics::MeshBuilder::new();
         
         // draw background first
-        let b_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.background_rectangle, self.background_color);
+        let b_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.background_rectangle, self.background_color).build(ctx).unwrap();
 
         // draw foreground
-        let f_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.foreground_rectangle, self.foreground_color);
+        let f_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.foreground_rectangle, self.foreground_color).build(ctx).unwrap();
+
+
+        graphics::draw(ctx, &b_mesh, self.draw_param.color(self.background_color)).unwrap();
+        graphics::draw(ctx, &f_mesh, self.draw_param.color(self.foreground_color)).unwrap();
 
         Ok(())
     }
@@ -161,14 +177,12 @@ impl Entity {
         );
 
         // Attack Rect.top_left location
-        // values are hard coded here unfortunately
         let attack_top_left_position = Point2::new(
             bound_top_left_position.x + (20.0 * SCALE),
             bound_top_left_position.y + (6.0 * SCALE),
         );
 
         // Attack Rect.bottom_right location
-        // values are hard coded here unfortunately
         let attack_bottom_right_position = Point2::new(
             bound_bottom_right_position.x,
             bound_top_left_position.y - (17.0 * SCALE),
@@ -311,16 +325,22 @@ impl ControlledActor for Entity {
 
 pub struct GameMatch {
     pub id: usize,
+    health_bar_1: HealthBar,
+    health_bar_2: HealthBar,
     pub entities: Vec<Entity>,
 }
 
 impl GameMatch {
     pub fn new() -> GameMatch {
         let ent = Entity::new(0);
+        let hp_bar_1 = HealthBar::new(0);
         let ent1 = Entity::new(1);
+        let hp_bar_2 = HealthBar::new(1);
         let entity_vector = vec![ent, ent1];
         GameMatch {
             id: 0,
+            health_bar_1: hp_bar_1,
+            health_bar_2: hp_bar_2,
             entities: entity_vector,
         }
     }
@@ -331,6 +351,10 @@ impl GameMatch {
         for entity in &mut self.entities {
             entity.update().unwrap();
         }
+
+        self.health_bar_1.update(2);
+        self.health_bar_2.update(3);
+
 
         Ok(())
     }
@@ -347,6 +371,10 @@ impl GameMatch {
                 .draw(ctx, entity_spritesheet, entity_drawparams)
                 .unwrap();
         }
+
+        // draw health bars
+        self.health_bar_1.draw(ctx).unwrap();
+        self.health_bar_2.draw(ctx).unwrap();
 
         Ok(())
     }
