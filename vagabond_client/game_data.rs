@@ -32,6 +32,64 @@ pub trait ControlledActor {
     fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods);
 }
 
+struct HealthBar {
+    id: usize, // corresponds to the player
+    foreground_rectangle: graphics::Rect,
+    background_rectangle: graphics::Rect,
+    foreground_color: Color,
+    background_color: Color,
+}
+impl HealthBar {
+    pub fn new(id: usize) -> HealthBar {
+        let width = 10.0 * SCALE;
+        let height = 3.0 * SCALE;
+        let f_color = Color::new(1.0, 0.0, 0.0, 1.0);
+        let b_color = Color::new(0.5, 0.5, 0.5, 0.5);
+
+        let position = match id {
+            0 => Point2::new(0.0, 0.0),
+            1 => Point2::new(SCREEN_WIDTH, 0.0),
+            _ => Point2::new(0.0, 0.0)
+        };
+
+        let f_rect = graphics::Rect::new(position.x, position.y, width, height);
+        let b_rect = graphics::Rect::new(position.x, position.y, width, height);
+
+        HealthBar {
+            id: id,
+            foreground_rectangle: f_rect,
+            background_rectangle: b_rect,
+            foreground_color: f_color,
+            background_color: b_color,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        let width = 10.0 * SCALE;
+        let height = 3.0 * SCALE;
+
+        let position = match self.id {
+            1 => Point2::new(SCREEN_WIDTH - width, 0.0),
+            _ => Point2::new(0.0, 0.0)
+        };
+
+        self.foreground_rectangle = graphics::Rect::new(position.x, position.y, width, height);
+        self.background_rectangle = graphics::Rect::new(position.x, position.y, width, height);
+    }
+
+    pub fn draw(&self) -> GameResult {
+        let mut mesh_builder = graphics::MeshBuilder::new();
+        
+        // draw background first
+        let b_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.background_rectangle, self.background_color);
+
+        // draw foreground
+        let f_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.foreground_rectangle, self.foreground_color);
+
+        Ok(())
+    }
+}
+
 // all possible action states for an entity to be in
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 enum Action {
@@ -154,7 +212,7 @@ impl Entity {
         self.pos.x += self.vel.x;
         self.pos.y += self.vel.y;
 
-        self.bound.change_location_vel(&self.vel);
+        self.bound.translate(&self.vel);
 
         Ok(())
     }

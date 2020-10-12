@@ -35,8 +35,7 @@ impl Rect {
         }
     }
 
-    // allows Rects location to be changed via velocity
-    pub fn change_location_vel(&mut self, vel: &Point2) {
+    pub fn translate(&mut self, vel: &Point2) {
         self.top_left.x += vel.x;
         self.top_left.y += vel.y;
         self.bottom_right.x += vel.x;
