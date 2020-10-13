@@ -184,16 +184,16 @@ impl Entity {
         );
 
         // Attack Rect.top_left location
-        let attack_top_left_position = Point2::new(
-            bound_top_left_position.x + (20.0 * SCALE),
-            bound_top_left_position.y + (6.0 * SCALE),
-        );
+        let attack_top_left_position = match id {
+            1 => Point2::new(bound_top_left_position.x, bound_top_left_position.y + (6.0 * SCALE)),
+            _ => Point2::new(bound_top_left_position.x + (20.0 * SCALE), bound_top_left_position.y + (6.0 * SCALE))
+        };
 
         // Attack Rect.bottom_right location
-        let attack_bottom_right_position = Point2::new(
-            bound_bottom_right_position.x,
-            bound_top_left_position.y + (17.0 * SCALE),
-        );
+        let attack_bottom_right_position = match id {
+            1 => Point2::new(bound_top_left_position.x + (12.0 * SCALE), bound_top_left_position.y + (17.0 * SCALE)),
+            _ => Point2::new(bound_bottom_right_position.x, bound_top_left_position.y + (17.0 * SCALE))
+        };
 
         let facing = match id {
             0 => Action::Right,
@@ -357,7 +357,7 @@ impl GameMatch {
         let hp_bar_2 = HealthBar::new(1);
         let entity_vector = vec![ent, ent1];
         GameMatch {
-            id: 0,
+            id: 1,
             health_bar_1: hp_bar_1,
             health_bar_2: hp_bar_2,
             entities: entity_vector,
