@@ -2,23 +2,24 @@ use ggez;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::graphics::{DrawParam, FilterMode, Image, Rect, Font};
+use ggez::graphics::{DrawParam, FilterMode, Font, Image, Rect};
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
 
 use std::env;
-use std::path::{Path, PathBuf};
 use std::net::TcpStream;
+use std::path::{Path, PathBuf};
 
+mod animate;
 mod constants;
+mod entity_data;
 mod game_data;
 mod geometry;
 mod gui_data;
-mod animate;
 
-use constants::{SCALE, SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE};
+use constants::{SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
 
 use game_data::{ControlledActor, GameMatch};
 
@@ -127,7 +128,12 @@ impl EventHandler for MainState {
 
         // draw everything else
         self.game_match
-            .draw(ctx, &self.entity_spritesheet, &self.entity_drawparams, &self.font)
+            .draw(
+                ctx,
+                &self.entity_spritesheet,
+                &self.entity_drawparams,
+                &self.font,
+            )
             .expect("Draw call for GameMatch failed");
 
         graphics::present(ctx)?;
