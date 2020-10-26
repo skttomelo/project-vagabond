@@ -13,9 +13,13 @@ use std::path::{Path, PathBuf};
 use std::net::TcpStream;
 
 mod constants;
+mod game_data;
+mod geometry;
+mod gui_data;
+mod animate;
+
 use constants::{SCALE, SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE};
 
-mod game_data;
 use game_data::{ControlledActor, GameMatch};
 
 /*************************************************************

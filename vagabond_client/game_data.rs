@@ -10,21 +10,14 @@ use serde::{Deserialize, Serialize};
 
 use std::time::Duration;
 
-#[path = "constants.rs"]
-mod constants;
-use constants::{SCALE, SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, MAX_HP, PLAYER_TWO_COLOR};
 
-#[path = "animate.rs"]
-mod animate;
-use animate::Animator;
+use crate::constants::{SCALE, SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, MAX_HP, PLAYER_TWO_COLOR};
 
-#[path = "geometry.rs"]
-mod geometry;
-use geometry::{Point2, Rect};
+use crate::animate::Animator;
 
-#[path = "gui_data.rs"]
-mod gui_data;
-use gui_data::{HealthBar, Clock};
+use crate::geometry::{Point2, Rect};
+
+use crate::gui_data::{HealthBar, Clock};
 
 
 

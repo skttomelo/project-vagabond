@@ -18,10 +18,6 @@ impl Point2 {
     pub fn as_mint_vector(&self) -> cgmath::Vector2<f32> {
         cgmath::Vector2::<f32>::new(self.x, self.y)
     }
-
-    pub fn as_scale(&self) -> ggez::graphics::Scale {
-        ggez::graphics::Scale::uniform(self.x)
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]

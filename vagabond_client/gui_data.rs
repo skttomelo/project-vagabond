@@ -6,11 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use cgmath::Vector2;
 
-mod constants;
-use constants::{SCALE, SCREEN_WIDTH, MAX_HP};
 
-mod geometry;
-use geometry::Point2;
+use crate::constants::{SCALE, SCREEN_WIDTH, MAX_HP};
+
+use crate::geometry::Point2;
 
 
 pub struct HealthBar {
