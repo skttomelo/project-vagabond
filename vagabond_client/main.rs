@@ -2,7 +2,7 @@ use ggez;
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::graphics::{DrawParam, FilterMode, Image, Rect};
+use ggez::graphics::{DrawParam, FilterMode, Image, Rect, Font};
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
@@ -10,11 +10,13 @@ use cgmath::Vector2;
 
 use std::env;
 use std::path::{Path, PathBuf};
-
 use std::net::TcpStream;
 
+mod constants;
+use constants::{SCALE, SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE};
+
 mod game_data;
-use game_data::{ControlledActor, GameMatch, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
+use game_data::{ControlledActor, GameMatch};
 
 /*************************************************************
  *  TODO: Place all images into a spritesheet and subdivide  *
@@ -27,6 +29,7 @@ struct MainState {
     entity_spritesheet: Image,
     entity_drawparams: Vec<DrawParam>,
     background_assets: Vec<Image>,
+    font: Font,
     server: Option<TcpStream>,
 }
 
@@ -37,11 +40,14 @@ impl MainState {
         let (entity_spritesheet, entity_drawparams, background_assets) =
             MainState::load_images(ctx);
 
+        let font = Font::new(ctx, "/Fonts/PressStart2P-vaV7.ttf").unwrap();
+
         let s = MainState {
             game_match: gm,
             entity_spritesheet: entity_spritesheet,
             entity_drawparams: entity_drawparams,
             background_assets: background_assets,
+            font: font,
             server: None,
         };
         Ok(s)
@@ -91,13 +97,6 @@ impl MainState {
             counter += increment;
         }
 
-        // for entry in samurai_directory.read_dir().unwrap() {
-        //     let entry = entry.unwrap();
-        //     let path = Path::new("/Samurai").join(entry.file_name());
-
-        //     samurai_images.push(Image::new(ctx, path).unwrap());
-        // }
-
         (samurai_image, samurai_drawparams, background_images)
     }
 }
@@ -124,7 +123,7 @@ impl EventHandler for MainState {
 
         // draw everything else
         self.game_match
-            .draw(ctx, &self.entity_spritesheet, &self.entity_drawparams)
+            .draw(ctx, &self.entity_spritesheet, &self.entity_drawparams, &self.font)
             .expect("Draw call for GameMatch failed");
 
         graphics::present(ctx)?;

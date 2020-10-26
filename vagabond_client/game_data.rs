@@ -1,8 +1,7 @@
 use ggez;
 use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics;
-use ggez::graphics::Color; // will be used to depict damage and enemy color
-use ggez::graphics::{DrawParam, Image};
+use ggez::graphics::{DrawParam, Image, Font};
 use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
@@ -10,6 +9,10 @@ use cgmath::Vector2;
 use serde::{Deserialize, Serialize};
 
 use std::time::Duration;
+
+#[path = "constants.rs"]
+mod constants;
+use constants::{SCALE, SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, MAX_HP, PLAYER_TWO_COLOR};
 
 #[path = "animate.rs"]
 mod animate;
@@ -19,92 +22,16 @@ use animate::Animator;
 mod geometry;
 use geometry::{Point2, Rect};
 
-pub const SCALE: f32 = 5.5;
-pub const TILE_SIZE: f32 = 32.0;
-pub const SCREEN_WIDTH: f32 = 800.0;
-pub const SCREEN_HEIGHT: f32 = 600.0;
+#[path = "gui_data.rs"]
+mod gui_data;
+use gui_data::{HealthBar, Clock};
 
-const MAX_HP: u8 = 5;
-const PLAYER_TWO_COLOR: Color = Color::new(1.0, 0.5, 1.0, 1.0);
+
 
 // user controlled entities require this
 pub trait ControlledActor {
     fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool);
     fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods);
-}
-
-struct HealthBar {
-    id: usize, // player id
-    max_hp: u8,
-    foreground_rectangle: graphics::Rect,
-    background_rectangle: graphics::Rect,
-    foreground_color: Color,
-    background_color: Color,
-    draw_param: DrawParam,
-}
-impl HealthBar {
-    pub fn new(id: usize) -> HealthBar {
-        let width = match id {
-            1 => -10.0 * SCALE * 4.0,
-            _ => 10.0 * SCALE * 4.0
-        };
-        let height = 3.0 * SCALE * 2.0;
-        let f_color = Color::new(1.0, 0.0, 0.0, 1.0);
-        let b_color = Color::new(0.5, 0.5, 0.5, 0.5);
-
-        // id corresponds to the player
-        let position = match id {
-            1 => Point2::new(SCREEN_WIDTH, 0.0),
-            _ => Point2::new(0.0, 0.0)
-        };
-
-        let f_rect = graphics::Rect::new(position.x, position.y, width, height);
-        let b_rect = graphics::Rect::new(position.x, position.y, width, height);
-
-        let draw_param = DrawParam::new().src(f_rect.clone());
-
-        HealthBar {
-            id: id,
-            max_hp: MAX_HP,
-            foreground_rectangle: f_rect,
-            background_rectangle: b_rect,
-            foreground_color: f_color,
-            background_color: b_color,
-            draw_param: draw_param,
-        }
-    }
-
-    pub fn update(&mut self, current_hp: u8) {
-        let new_width = (self.background_rectangle.w / self.max_hp as f32) * current_hp as f32;
-        self.foreground_rectangle.w = new_width;
-    }
-
-    #[allow(dead_code)]
-    pub fn reset(&mut self) {
-
-        self.foreground_rectangle = self.background_rectangle.clone();
-        
-        self.draw_param = DrawParam::new().src(self.foreground_rectangle.clone());
-        if self.id == 1 {
-            self.draw_param = self.draw_param.scale(Vector2::<f32>::new(-1.0,1.0))
-        }
-    }
-
-    pub fn draw(&self, ctx: &mut Context) -> GameResult {
-        let mut mesh_builder = graphics::MeshBuilder::new();
-        
-        // draw background first
-        let b_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.background_rectangle, self.background_color).build(ctx).unwrap();
-
-        // draw foreground
-        let f_mesh = mesh_builder.rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), self.foreground_rectangle, self.foreground_color).build(ctx).unwrap();
-
-
-        graphics::draw(ctx, &b_mesh, self.draw_param.color(self.background_color)).unwrap();
-        graphics::draw(ctx, &f_mesh, self.draw_param.color(self.foreground_color)).unwrap();
-
-        Ok(())
-    }
 }
 
 // all possible action states for an entity to be in
@@ -207,7 +134,7 @@ impl Entity {
             dmg: 1,
             entity_actions: EntityActions::new(facing),
             pos: position,
-            animator: Animator::new(3, Duration::from_millis(188)),
+            animator: Animator::new(3, Duration::from_millis(188), true),
             vel: Point2::new(0.0, 0.0),
             bound: Rect::new(bound_top_left_position, bound_bottom_right_position),
             attack_bound: Rect::new(attack_top_left_position, attack_bottom_right_position),
@@ -344,6 +271,7 @@ impl ControlledActor for Entity {
 
 pub struct GameMatch {
     pub id: usize,
+    clock: Clock,
     health_bar_1: HealthBar,
     health_bar_2: HealthBar,
     pub entities: Vec<Entity>,
@@ -358,6 +286,7 @@ impl GameMatch {
         let entity_vector = vec![ent, ent1];
         GameMatch {
             id: 1,
+            clock: Clock::new(),
             health_bar_1: hp_bar_1,
             health_bar_2: hp_bar_2,
             entities: entity_vector,
@@ -391,7 +320,6 @@ impl GameMatch {
         self.health_bar_1.update(self.entities[0].hp);
         self.health_bar_2.update(self.entities[1].hp);
 
-
         Ok(())
     }
 
@@ -400,6 +328,7 @@ impl GameMatch {
         ctx: &mut Context,
         entity_spritesheet: &Image,
         entity_drawparams: &Vec<DrawParam>,
+        font: &Font,
     ) -> GameResult {
         // draw entities
         for entity in &self.entities {
@@ -411,6 +340,10 @@ impl GameMatch {
         // draw health bars
         self.health_bar_1.draw(ctx).unwrap();
         self.health_bar_2.draw(ctx).unwrap();
+
+        // draw clock
+
+        self.clock.draw(ctx, font).unwrap();
 
         Ok(())
     }

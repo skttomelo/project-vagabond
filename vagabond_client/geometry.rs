@@ -1,4 +1,3 @@
-use cgmath::Vector2;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
@@ -16,8 +15,12 @@ impl Point2 {
     }
 
     #[allow(dead_code)]
-    pub fn as_mint_vector(&self) -> Vector2<f32> {
-        Vector2::<f32>::new(self.x, self.y)
+    pub fn as_mint_vector(&self) -> cgmath::Vector2<f32> {
+        cgmath::Vector2::<f32>::new(self.x, self.y)
+    }
+
+    pub fn as_scale(&self) -> ggez::graphics::Scale {
+        ggez::graphics::Scale::uniform(self.x)
     }
 }
 

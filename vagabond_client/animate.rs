@@ -6,15 +6,17 @@ pub struct Animator {
     total_frames: usize,
     current_time: Option<Instant>,
     frame_duration: Duration,
+    repeat: bool,
 }
 
 impl Animator {
-    pub fn new(total_frames: usize, frame_duration: Duration) -> Animator {
+    pub fn new(total_frames: usize, frame_duration: Duration, repeat: bool) -> Animator {
         Animator {
             current_frame: 0,
             total_frames: total_frames,
             current_time: None,
             frame_duration: frame_duration,
+            repeat: repeat,
         }
     }
 
@@ -36,8 +38,11 @@ impl Animator {
         }
 
         self.current_time = Some(Instant::now()); // update the current time
-        self.current_frame += 1;
-        if self.current_frame == self.total_frames {
+        if self.current_frame != self.total_frames {
+            self.current_frame += 1;
+        }
+        
+        if self.current_frame == self.total_frames && self.repeat {
             self.current_frame = 0;
         }
     }
