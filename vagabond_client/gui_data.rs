@@ -12,7 +12,7 @@ use crate::geometry::Point2;
 
 pub struct HealthBar {
     id: usize, // player id
-    max_hp: u8,
+    max_hp: i8,
     foreground_rectangle: graphics::Rect,
     background_rectangle: graphics::Rect,
     foreground_color: Color,
@@ -51,7 +51,7 @@ impl HealthBar {
         }
     }
 
-    pub fn update(&mut self, current_hp: u8) {
+    pub fn update(&mut self, current_hp: i8) {
         let new_width = (self.background_rectangle.w / self.max_hp as f32) * current_hp as f32;
         self.foreground_rectangle.w = new_width;
     }

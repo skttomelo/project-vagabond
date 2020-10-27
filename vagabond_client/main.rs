@@ -89,7 +89,7 @@ impl MainState {
         let image_width = samurai_image.width();
         let scale = Vector2::<f32>::new(SCALE, SCALE);
         let width = TILE_SIZE / image_width as f32;
-        let increment = image_width / 6; // we have six frames inside of the spritesheet
+        let increment = image_width / 8; // we have six frames inside of the spritesheet
         while counter < image_width {
             // location in spritesheet
             let x = counter as f32 / image_width as f32;

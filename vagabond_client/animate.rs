@@ -6,22 +6,32 @@ pub struct Animator {
     total_frames: usize,
     current_time: Option<Instant>,
     frame_duration: Duration,
-    repeat: bool,
+    current_repeat: i8,
+    repeat: i8, // any negative number means to repeat indefinitely
 }
 
 impl Animator {
-    pub fn new(total_frames: usize, frame_duration: Duration, repeat: bool) -> Animator {
+    pub fn new(total_frames: usize, frame_duration: Duration, repeat: i8) -> Animator {
         Animator {
             current_frame: 0,
             total_frames: total_frames,
             current_time: None,
             frame_duration: frame_duration,
+            current_repeat: 0,
             repeat: repeat,
         }
     }
 
     pub fn current_frame(&self) -> usize {
         self.current_frame
+    }
+
+    pub fn current_repeat(&self) -> i8 {
+        self.current_repeat
+    }
+
+    pub fn max_repeats(&self) -> i8 {
+        self.repeat
     }
 
     pub fn update(&mut self) {
@@ -38,12 +48,18 @@ impl Animator {
         }
 
         self.current_time = Some(Instant::now()); // update the current time
-        if self.current_frame != self.total_frames {
+        if self.current_frame != self.total_frames && (self.current_repeat <= self.repeat || self.repeat < 0) {
             self.current_frame += 1;
         }
 
-        if self.current_frame == self.total_frames && self.repeat {
-            self.current_frame = 0;
+        if self.current_frame == self.total_frames {
+            if self.repeat >= 0 {
+                self.current_repeat += 1;
+            }
+            
+            if self.current_repeat <= self.repeat || self.repeat < 0 {
+                self.current_frame = 0;
+            }
         }
     }
 
@@ -51,5 +67,6 @@ impl Animator {
     pub fn end(&mut self) {
         self.current_frame = 0;
         self.current_time = None;
+        self.current_repeat = 0;
     }
 }

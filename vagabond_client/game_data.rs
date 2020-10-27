@@ -30,7 +30,7 @@ impl GameMatch {
         let hp_bar_2 = HealthBar::new(1);
         let entity_vector = vec![ent, ent1];
         GameMatch {
-            id: 1,
+            id: 0,
             clock: Clock::new(),
             health_bar_1: hp_bar_1,
             health_bar_2: hp_bar_2,
@@ -45,7 +45,7 @@ impl GameMatch {
         self.entities[1].update().unwrap();
 
         // player 1 is attacking
-        if self.entities[0].entity_actions.attacking == true
+        if self.entities[0].entity_actions.damage_check == true
             && self.entities[0].entity_actions.blocking == false
             && self.entities[1].entity_actions.blocking == false
         {
@@ -54,14 +54,13 @@ impl GameMatch {
                 .check_bounds(&self.entities[1].bound)
                 == true
             {
-                if self.entities[1].get_hp() != 0 {
-                    self.entities[1].take_damage();
-                }
+                self.entities[1].take_damage();
             }
         }
+        self.entities[0].entity_actions.damage_check = false;
 
         // player 2 is attacking
-        if self.entities[1].entity_actions.attacking == true
+        if self.entities[1].entity_actions.damage_check == true
             && self.entities[1].entity_actions.blocking == false
             && self.entities[0].entity_actions.blocking == false
         {
@@ -70,11 +69,10 @@ impl GameMatch {
                 .check_bounds(&self.entities[0].bound)
                 == true
             {
-                if self.entities[0].get_hp() != 0 {
-                    self.entities[1].take_damage();
-                }
+                self.entities[0].take_damage();
             }
         }
+        self.entities[1].entity_actions.damage_check = false;
 
         self.health_bar_1.update(self.entities[0].get_hp());
         self.health_bar_2.update(self.entities[1].get_hp());
