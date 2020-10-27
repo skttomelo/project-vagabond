@@ -179,9 +179,6 @@ impl Entity {
         Ok(())
     }
 
-    /***************************************************************************************
-     * TODO: factor out calculations and assignments to update function from draw function *
-     ***************************************************************************************/
     pub fn draw(
         &self,
         ctx: &mut Context,
@@ -198,12 +195,12 @@ impl Entity {
                 .color(PLAYER_TWO_COLOR);
         }
 
-        let random_rect = graphics::Rect::new(self.bound.top_left.x, self.bound.top_left.y, TILE_SIZE*SCALE, TILE_SIZE*SCALE);
-        let random_attack_rect = graphics::Rect::new(self.attack_bound.top_left.x, self.attack_bound.top_left.y, self.attack_bound.bottom_right.x - self.attack_bound.top_left.x, self.attack_bound.bottom_right.y - self.attack_bound.top_left.y);
-        let random_mesh = graphics::MeshBuilder::new().rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), random_rect, graphics::Color::new(0.0,1.0,0.0,1.0)).build(ctx).unwrap();
-        let random_attack_mesh = graphics::MeshBuilder::new().rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), random_attack_rect, graphics::Color::new(1.0,0.0,0.0,1.0)).build(ctx).unwrap();
-        graphics::draw(ctx, &random_mesh, DrawParam::new()).unwrap();
-        graphics::draw(ctx, &random_attack_mesh, DrawParam::new()).unwrap();
+        // let random_rect = graphics::Rect::new(self.bound.top_left.x, self.bound.top_left.y, TILE_SIZE*SCALE, TILE_SIZE*SCALE);
+        // let random_attack_rect = graphics::Rect::new(self.attack_bound.top_left.x, self.attack_bound.top_left.y, self.attack_bound.bottom_right.x - self.attack_bound.top_left.x, self.attack_bound.bottom_right.y - self.attack_bound.top_left.y);
+        // let random_mesh = graphics::MeshBuilder::new().rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), random_rect, graphics::Color::new(0.0,1.0,0.0,1.0)).build(ctx).unwrap();
+        // let random_attack_mesh = graphics::MeshBuilder::new().rectangle(graphics::DrawMode::Fill(graphics::FillOptions::default()), random_attack_rect, graphics::Color::new(1.0,0.0,0.0,1.0)).build(ctx).unwrap();
+        // graphics::draw(ctx, &random_mesh, DrawParam::new()).unwrap();
+        // graphics::draw(ctx, &random_attack_mesh, DrawParam::new()).unwrap();
 
         graphics::draw(ctx, entity_spritesheet, draw_param).unwrap();
 

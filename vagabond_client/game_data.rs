@@ -40,39 +40,14 @@ impl GameMatch {
 
     pub fn update(&mut self) -> GameResult {
         // update entities
-        // TODO: collision check for attacking
         self.entities[0].update().unwrap();
         self.entities[1].update().unwrap();
 
         // player 1 is attacking
-        if self.entities[0].entity_actions.damage_check == true
-            && self.entities[0].entity_actions.blocking == false
-            && self.entities[1].entity_actions.blocking == false
-        {
-            if self.entities[0]
-                .attack_bound
-                .check_bounds(&self.entities[1].bound)
-                == true
-            {
-                self.entities[1].take_damage();
-            }
-        }
-        self.entities[0].entity_actions.damage_check = false;
+        self.attack_bound_check(0, 1);
 
         // player 2 is attacking
-        if self.entities[1].entity_actions.damage_check == true
-            && self.entities[1].entity_actions.blocking == false
-            && self.entities[0].entity_actions.blocking == false
-        {
-            if self.entities[1]
-                .attack_bound
-                .check_bounds(&self.entities[0].bound)
-                == true
-            {
-                self.entities[0].take_damage();
-            }
-        }
-        self.entities[1].entity_actions.damage_check = false;
+        self.attack_bound_check(1, 0);
 
         self.health_bar_1.update(self.entities[0].get_hp());
         self.health_bar_2.update(self.entities[1].get_hp());
@@ -103,6 +78,22 @@ impl GameMatch {
         self.clock.draw(ctx, font).unwrap();
 
         Ok(())
+    }
+
+    fn attack_bound_check(&mut self, first_entity_id: usize, second_entity_id: usize) {
+        if self.entities[first_entity_id].entity_actions.damage_check == true
+        && self.entities[first_entity_id].entity_actions.blocking == false
+        && self.entities[second_entity_id].entity_actions.blocking == false
+        {
+            if self.entities[first_entity_id]
+                .attack_bound
+                .check_bounds(&self.entities[second_entity_id].bound)
+                == true
+            {
+                self.entities[second_entity_id].take_damage();
+            }
+        }
+        self.entities[first_entity_id].entity_actions.damage_check = false;
     }
 }
 
