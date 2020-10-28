@@ -48,7 +48,9 @@ impl Animator {
         }
 
         self.current_time = Some(Instant::now()); // update the current time
-        if self.current_frame != self.total_frames && (self.current_repeat <= self.repeat || self.repeat < 0) {
+        if self.current_frame != self.total_frames
+            && (self.current_repeat <= self.repeat || self.repeat < 0)
+        {
             self.current_frame += 1;
         }
 
@@ -56,7 +58,7 @@ impl Animator {
             if self.repeat >= 0 {
                 self.current_repeat += 1;
             }
-            
+
             if self.current_repeat <= self.repeat || self.repeat < 0 {
                 self.current_frame = 0;
             }

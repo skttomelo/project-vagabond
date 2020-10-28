@@ -3,8 +3,6 @@ use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics::{DrawParam, Font, Image};
 use ggez::{Context, GameResult};
 
-use serde::{Deserialize, Serialize};
-
 use crate::entity_data::Entity;
 use crate::gui_data::{Clock, HealthBar};
 
@@ -81,19 +79,30 @@ impl GameMatch {
     }
 
     fn attack_bound_check(&mut self, first_entity_id: usize, second_entity_id: usize) {
-        if self.entities[first_entity_id].entity_actions.damage_check == true
-        && self.entities[first_entity_id].entity_actions.blocking == false
-        && self.entities[second_entity_id].entity_actions.blocking == false
+        if self.entities[first_entity_id]
+            .get_entity_actions_as_ref()
+            .damage_check
+            == true
+            && self.entities[first_entity_id]
+                .get_entity_actions_as_ref()
+                .blocking
+                == false
+            && self.entities[second_entity_id]
+                .get_entity_actions_as_ref()
+                .blocking
+                == false
         {
             if self.entities[first_entity_id]
-                .attack_bound
-                .check_bounds(&self.entities[second_entity_id].bound)
+                .get_attack_bound()
+                .check_bounds(&self.entities[second_entity_id].get_bound())
                 == true
             {
-                self.entities[second_entity_id].take_damage();
+                self.entities[second_entity_id].take_damage(1);
             }
         }
-        self.entities[first_entity_id].entity_actions.damage_check = false;
+        self.entities[first_entity_id]
+            .get_entity_actions_as_mut_ref()
+            .damage_check = false;
     }
 }
 
@@ -104,11 +113,4 @@ impl ControlledActor for GameMatch {
     fn key_up_event(&mut self, keycode: KeyCode, keymods: KeyMods) {
         &self.entities[self.id].key_up_event(keycode, keymods);
     }
-}
-
-// data received from server
-// Deserialize
-#[derive(Debug)]
-pub struct GameMatchServer {
-    pub entities: Vec<Entity>,
 }

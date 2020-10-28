@@ -18,6 +18,7 @@ mod entity_data;
 mod game_data;
 mod geometry;
 mod gui_data;
+mod server_data;
 
 use constants::{SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
 

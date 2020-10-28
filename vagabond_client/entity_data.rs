@@ -56,16 +56,15 @@ impl EntityActions {
 // Serialize, Deserialize -- not needed because there will be a struct that will be used for sending to the server that is not this
 #[derive(Clone, Copy, Debug)]
 pub struct Entity {
-    id: usize, // id will be removed... game match will handle id's instead
-    hp: i8,    // health of entity
-    dmg: i8,   // damage the entity can deal
+    id: usize,
+    hp: i8, // health of entity
     pub entity_actions: EntityActions,
     movement_animator: Animator,
     attack_animator: Animator,
     pos: Point2,
     vel: Point2,
-    pub bound: Rect,
-    pub attack_bound: Rect,
+    bound: Rect,
+    attack_bound: Rect,
     scale: Point2, // make changes to reflect in server code because right now that is reflected as a f32 only
 }
 impl Entity {
@@ -128,7 +127,6 @@ impl Entity {
         Entity {
             id: id,
             hp: MAX_HP,
-            dmg: 1,
             entity_actions: EntityActions::new(facing),
             pos: position,
             movement_animator: Animator::new(3, Duration::from_millis(148), -1),
@@ -212,13 +210,13 @@ impl Entity {
         if self.entity_actions.attacking {
             if self.attack_animator.current_repeat() < self.attack_animator.max_repeats() {
                 return 1 + self.attack_animator.current_frame(); // raising sword
-            } else if self.attack_animator.current_repeat() == self.attack_animator.max_repeats(){
+            } else if self.attack_animator.current_repeat() == self.attack_animator.max_repeats() {
                 return 3 - self.attack_animator.current_frame(); // lowering sword
             } else {
                 return 1;
             }
         } else if self.entity_actions.blocking {
-                return 0;
+            return 0;
         } else if self.entity_actions.moving_left || self.entity_actions.moving_right {
             match self.entity_actions.facing {
                 Action::Right => {
@@ -233,16 +231,6 @@ impl Entity {
         } else {
             // not moving or attacking or blocking
             return 4;
-        }
-    }
-
-    pub fn get_hp(&self) -> i8 {
-        self.hp
-    }
-
-    pub fn take_damage(&mut self) {
-        if self.hp > 0 {
-            self.hp -= self.dmg;
         }
     }
 
@@ -262,6 +250,50 @@ impl Entity {
     }
 }
 
+// accessors and one mutator
+impl Entity {
+    pub fn get_id(&self) -> usize {
+        self.id
+    }
+    pub fn get_hp(&self) -> i8 {
+        self.hp
+    }
+
+    pub fn take_damage(&mut self, dmg: i8) {
+        if self.hp > 0 {
+            self.hp -= dmg;
+        }
+    }
+
+    pub fn get_pos(&self) -> Point2 {
+        self.pos.clone()
+    }
+
+    pub fn get_vel(&self) -> Point2 {
+        self.vel.clone()
+    }
+
+    pub fn get_bound(&self) -> Rect {
+        self.bound.clone()
+    }
+
+    pub fn get_attack_bound(&self) -> Rect {
+        self.attack_bound.clone()
+    }
+
+    pub fn get_entity_actions(&self) -> EntityActions {
+        self.entity_actions.clone()
+    }
+
+    pub fn get_entity_actions_as_ref(&mut self) -> &EntityActions {
+        &self.entity_actions
+    }
+
+    pub fn get_entity_actions_as_mut_ref(&mut self) -> &mut EntityActions {
+        &mut self.entity_actions
+    }
+}
+
 impl ControlledActor for Entity {
     fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
         match keycode {
@@ -271,7 +303,7 @@ impl ControlledActor for Entity {
                     self.attack_animator.end();
                 }
                 self.entity_actions.can_attack = false;
-            },
+            }
             KeyCode::Left => {
                 self.entity_actions.moving_left = true;
                 self.entity_actions.facing = Action::Left;
