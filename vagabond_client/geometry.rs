@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Point2 {
     pub x: f32,
     pub y: f32,
@@ -20,7 +20,7 @@ impl Point2 {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Rect {
     pub top_left: Point2,
     pub bottom_right: Point2,

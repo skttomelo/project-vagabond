@@ -106,6 +106,18 @@ impl GameMatch {
     }
 }
 
+impl GameMatch {
+    pub fn get_id(&self) -> usize {
+        self.id
+    }
+    pub fn get_clock(&self) -> Clock {
+        self.clock.clone()
+    }
+    pub fn get_entities(&self) -> Vec<Entity> {
+        self.entities.clone()
+    }
+}
+
 impl ControlledActor for GameMatch {
     fn key_down_event(&mut self, keycode: KeyCode, keymods: KeyMods, repeat: bool) {
         &self.entities[self.id].key_down_event(keycode, keymods, repeat);

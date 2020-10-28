@@ -16,7 +16,7 @@ use crate::game_data::ControlledActor;
 use crate::geometry::{Point2, Rect};
 
 // all possible action states for an entity to be in
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Action {
     Left,
     Right,
@@ -26,7 +26,7 @@ pub enum Action {
 }
 
 // helper struct for cleaning up Entity struct
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EntityActions {
     pub facing: Action, // Left or Right
     pub moving_left: bool,
@@ -54,7 +54,7 @@ impl EntityActions {
 }
 
 // Serialize, Deserialize -- not needed because there will be a struct that will be used for sending to the server that is not this
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Entity {
     id: usize,
     hp: i8, // health of entity

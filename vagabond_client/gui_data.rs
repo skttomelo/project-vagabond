@@ -96,7 +96,7 @@ impl HealthBar {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Clock {
     current: u16,
 }

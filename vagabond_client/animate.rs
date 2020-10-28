@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Animator {
     current_frame: usize,
     total_frames: usize,

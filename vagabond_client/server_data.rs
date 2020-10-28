@@ -9,15 +9,22 @@ use crate::gui_data::Clock;
 pub struct ServerGameMatch {
     id: usize,
     clock: Clock,
-    entities: Vec<ServerEntity>,
+    server_entities: Vec<ServerEntity>,
 }
 
 impl ServerGameMatch {
-    pub fn from_game_match(game_match: GameMatch) -> ServerGameMatch {
+    pub fn from_game_match(game_match: &GameMatch) -> ServerGameMatch {
+        let mut server_entities: Vec<ServerEntity> = Vec::new();
+        let entities = game_match.get_entities();
+
+        for entity in entities {
+            server_entities.push(ServerEntity::from_entity(&entity));
+        }
+
         ServerGameMatch {
             id: game_match.get_id(),
             clock: game_match.get_clock(),
-            entities: game_match.get_entities(),
+            server_entities: server_entities,
         }
     }
 }
