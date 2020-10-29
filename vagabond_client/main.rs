@@ -8,9 +8,13 @@ use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
 
+use serde_json;
+
 use std::env;
-use std::net::TcpStream;
+use std::net::{TcpStream}; // Shutdown
 use std::path::{Path, PathBuf};
+use std::io::{Read, Write};
+use std::str::from_utf8;
 
 mod animate;
 mod constants;
@@ -21,8 +25,8 @@ mod gui_data;
 mod server_data;
 
 use constants::{SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
-
 use game_data::{ControlledActor, GameMatch};
+use server_data::ServerGameMatch;
 
 /*************************************************************
  *  TODO: Place all images into a spritesheet and subdivide  *
@@ -36,12 +40,25 @@ struct MainState {
     entity_drawparams: Vec<DrawParam>,
     background_assets: Vec<Image>,
     font: Font,
-    server: Option<TcpStream>,
+    server: TcpStream,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let gm = GameMatch::new();
+        let mut server = TcpStream::connect("127.0.0.1:1337").unwrap();
+
+        let mut data = [0u8; 4096];
+
+        let id: usize;
+        let mut string_data: String;
+
+        // first acquire id
+        server.read(&mut data).unwrap();
+        string_data = String::from(from_utf8(&data).unwrap());
+        string_data = String::from(string_data.trim_matches(char::from(0)));
+        id = string_data.parse().unwrap(); // because id's type is declared earlier we do not need to do `parse::<u8>()`
+        println!("{}", id);
+        let gm = GameMatch::new(id);
 
         let (entity_spritesheet, entity_drawparams, background_assets) =
             MainState::load_images(ctx);
@@ -54,7 +71,7 @@ impl MainState {
             entity_drawparams: entity_drawparams,
             background_assets: background_assets,
             font: font,
-            server: None,
+            server: server,
         };
         Ok(s)
     }
@@ -109,6 +126,33 @@ impl MainState {
 
 impl EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        // create the ServerGameMatch that we will serialize
+        let server_game_match = ServerGameMatch::from_game_match(&self.game_match);
+
+        // serialize the data
+        let serialized_data = serde_json::to_string(&server_game_match).expect("Unable to serialize ServerGameMatch");
+        println!("{}", &serialized_data);
+
+        // convert data to byte array and send to server
+        let data_as_bytes = serialized_data.into_bytes();
+
+        // Send serialized byte data to server
+        self.server.write_all(&data_as_bytes).expect("Could not write bytes to stream");
+        self.server.flush().expect("Could not flush stream");
+
+
+        // code for receiving the data from the server goes here
+        let mut data = [0u8; 1024];
+
+        self.server.read(&mut data).unwrap();
+        let mut string_data = String::from(from_utf8(&data).unwrap());
+        string_data = string_data.trim_matches(char::from(0)).to_owned();
+
+        // deserialized data code goes here
+        let server_match: ServerGameMatch = serde_json::from_str(&string_data).unwrap();
+        self.game_match.update_from_server_game_match(&server_match);
+
+        // update the match on client end
         self.game_match.update().unwrap();
 
         Ok(())

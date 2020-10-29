@@ -5,9 +5,8 @@ use crate::game_data::GameMatch;
 use crate::geometry::{Point2, Rect};
 use crate::gui_data::Clock;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ServerGameMatch {
-    id: usize,
     clock: Clock,
     server_entities: Vec<ServerEntity>,
 }
@@ -22,14 +21,23 @@ impl ServerGameMatch {
         }
 
         ServerGameMatch {
-            id: game_match.get_id(),
             clock: game_match.get_clock(),
             server_entities: server_entities,
         }
     }
 }
 
-#[derive(Deserialize, Serialize)]
+// accessors
+impl ServerGameMatch {
+    pub fn get_clock(&self) -> Clock {
+        self.clock.clone()
+    }
+    pub fn get_server_entities(&self) -> Vec<ServerEntity> {
+        self.server_entities.clone()
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct ServerEntity {
     id: usize,
     hp: i8, // health of entity
@@ -51,5 +59,35 @@ impl ServerEntity {
             bound: entity.get_bound(),
             attack_bound: entity.get_attack_bound(),
         }
+    }
+}
+
+// accessors
+impl ServerEntity {
+    pub fn get_id(&self) -> usize {
+        self.id
+    }
+    pub fn get_hp(&self) -> i8 {
+        self.hp
+    }
+
+    pub fn get_pos(&self) -> Point2 {
+        self.pos.clone()
+    }
+
+    pub fn get_vel(&self) -> Point2 {
+        self.vel.clone()
+    }
+
+    pub fn get_bound(&self) -> Rect {
+        self.bound.clone()
+    }
+
+    pub fn get_attack_bound(&self) -> Rect {
+        self.attack_bound.clone()
+    }
+
+    pub fn get_entity_actions(&self) -> EntityActions {
+        self.entity_actions.clone()
     }
 }

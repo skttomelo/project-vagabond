@@ -14,15 +14,13 @@ use crate::animate::Animator;
 use crate::constants::{MAX_HP, PLAYER_TWO_COLOR, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
 use crate::game_data::ControlledActor;
 use crate::geometry::{Point2, Rect};
+use crate::server_data::ServerEntity;
 
 // all possible action states for an entity to be in
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Action {
     Left,
     Right,
-    Still,
-    Jumping,
-    Falling,
 }
 
 // helper struct for cleaning up Entity struct
@@ -35,7 +33,6 @@ pub struct EntityActions {
     pub attacking: bool,
     pub damage_check: bool,
     pub blocking: bool,
-    pub jumping: Action, // Jumping, Falling, or Still
 }
 
 impl EntityActions {
@@ -48,7 +45,6 @@ impl EntityActions {
             attacking: false,
             damage_check: false,
             blocking: false,
-            jumping: Action::Still,
         }
     }
 }
@@ -58,7 +54,7 @@ impl EntityActions {
 pub struct Entity {
     id: usize,
     hp: i8, // health of entity
-    pub entity_actions: EntityActions,
+    entity_actions: EntityActions,
     movement_animator: Animator,
     attack_animator: Animator,
     pos: Point2,
@@ -233,21 +229,6 @@ impl Entity {
             return 4;
         }
     }
-
-    // might be used in the future for handling entity updates from the server
-    #[allow(dead_code)]
-    pub fn update_data(&mut self, id: usize, entity: Entity) {
-        self.id = id;
-        self.entity_actions.facing = entity.entity_actions.facing;
-        self.entity_actions.moving_left = entity.entity_actions.moving_left;
-        self.entity_actions.moving_right = entity.entity_actions.moving_right;
-        self.entity_actions.attacking = entity.entity_actions.attacking;
-        self.entity_actions.blocking = entity.entity_actions.blocking;
-        self.entity_actions.jumping = entity.entity_actions.jumping;
-        self.pos = entity.pos;
-        self.vel = entity.vel;
-        self.scale = entity.scale;
-    }
 }
 
 // accessors and one mutator
@@ -291,6 +272,19 @@ impl Entity {
 
     pub fn get_entity_actions_as_mut_ref(&mut self) -> &mut EntityActions {
         &mut self.entity_actions
+    }
+}
+
+// update data received from the server
+impl Entity {
+    pub fn update_from_server_entity(&mut self, server_entity: &ServerEntity) {
+        self.id = server_entity.get_id();
+        self.hp = server_entity.get_hp();
+        self.entity_actions = server_entity.get_entity_actions();
+        self.pos = server_entity.get_pos();
+        self.vel = server_entity.get_vel();
+        self.bound = server_entity.get_bound();
+        self.attack_bound = server_entity.get_attack_bound();
     }
 }
 

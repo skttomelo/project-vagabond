@@ -5,12 +5,17 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 
 mod game_data;
-use game_data::{GameMatch, GameMatchClient};
+mod geometry;
+mod gui_data;
+mod entity_data;
+mod server_data;
+
+use server_data::ServerGameMatch;
 
 fn main() {
     // create initial match struct and id counter
-    let game_match = Arc::new(RwLock::new(GameMatch::new()));
-    let id_counter = Arc::new(RwLock::new(0u8));
+    let game_match = Arc::new(RwLock::new(ServerGameMatch::new()));
+    let id_counter = Arc::new(RwLock::new(0usize));
 
     // clone so we can move into closure
     let game_match_inner = game_match.clone();
@@ -44,16 +49,16 @@ fn main() {
 
 fn handle_client(
     mut socket: TcpStream,
-    game_match: Arc<RwLock<GameMatch>>,
-    counter: Arc<RwLock<u8>>,
+    game_match: Arc<RwLock<ServerGameMatch>>,
+    counter: Arc<RwLock<usize>>,
 ) {
-    let mut data = [0u8; 4096];
+    let mut data = [0u8; 1024];
 
     let mut string_data: String;
-    let id: u8;
+    let id: usize;
 
     // check if the server already has two people on it
-    // shut the stream down and return nothing
+    // shut the stream down and return nothing if true
     {
         let c = counter.write().unwrap();
         if *c == 2 {
@@ -70,7 +75,7 @@ fn handle_client(
     {
         let mut c = counter.write().unwrap();
         *c += 1;
-        id = *c;
+        id = *c - 1;
     }
 
     socket
@@ -87,30 +92,25 @@ fn handle_client(
                 socket.peer_addr().unwrap()
             );
             socket.shutdown(Shutdown::Both).unwrap();
-            // decrement counter by 1
-            {
-                let mut c = counter.write().unwrap();
-                *c -= 1;
-            }
             false
         }
     } {
         // read the data in from the socket and write it to a String
         string_data = String::from(from_utf8(&data).unwrap());
+        string_data = string_data.trim_matches(char::from(0)).to_owned();
 
-        // stream.read_to_string(&mut string_data).expect("Could not read to string");
-        string_data = String::from(string_data.trim_matches(char::from(0)));
-
-        // Deserialize the json data in the String to a Match struct
-        let match_details_client: GameMatchClient =
-            serde_json::from_str(string_data.as_str()).unwrap();
-        let match_details = GameMatch::from_game_match_client(match_details_client);
+        // Deserialize the json data in the String to a ServerGameMatch struct
+        let match_details: ServerGameMatch = serde_json::from_str(&string_data).unwrap();
 
         // update the player's data on the server
         game_match
             .write()
             .unwrap()
-            .update_entity(id - 1, match_details.entities[(id as usize) - 1].clone());
+            .update_entity(0, match_details.server_entities[0].clone());
+        game_match
+            .write()
+            .unwrap()
+            .update_entity(1, match_details.server_entities[1].clone());
 
         // Serialize the data on server into json and then send it back to the client
         let match_details_json = serde_json::to_string(&(*game_match.write().unwrap()))
@@ -120,6 +120,14 @@ fn handle_client(
             .write_all(&match_details_json.as_bytes())
             .expect("Could not write data to stream");
         socket.flush().expect("Could not flush stream");
+    }
+
+    // decrement counter by 1
+    {
+        let mut c = counter.write().unwrap();
+        if *c > 0 {
+            *c -= 1;
+        }
     }
 
     socket.shutdown(Shutdown::Both).unwrap();

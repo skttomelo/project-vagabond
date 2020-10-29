@@ -5,6 +5,7 @@ use ggez::{Context, GameResult};
 
 use crate::entity_data::Entity;
 use crate::gui_data::{Clock, HealthBar};
+use crate::server_data::ServerGameMatch;
 
 // user controlled entities require this
 pub trait ControlledActor {
@@ -21,14 +22,14 @@ pub struct GameMatch {
 }
 
 impl GameMatch {
-    pub fn new() -> GameMatch {
+    pub fn new(id: usize) -> GameMatch {
         let ent = Entity::new(0);
         let hp_bar_1 = HealthBar::new(0);
         let ent1 = Entity::new(1);
         let hp_bar_2 = HealthBar::new(1);
         let entity_vector = vec![ent, ent1];
         GameMatch {
-            id: 0,
+            id: id,
             clock: Clock::new(),
             health_bar_1: hp_bar_1,
             health_bar_2: hp_bar_2,
@@ -106,15 +107,25 @@ impl GameMatch {
     }
 }
 
+// accessors
 impl GameMatch {
-    pub fn get_id(&self) -> usize {
-        self.id
-    }
     pub fn get_clock(&self) -> Clock {
         self.clock.clone()
     }
     pub fn get_entities(&self) -> Vec<Entity> {
         self.entities.clone()
+    }
+}
+
+// update GameMatch with data from ServerGameMatch
+impl GameMatch {
+    pub fn update_from_server_game_match(&mut self, server_game_match: &ServerGameMatch) {
+        self.clock = server_game_match.get_clock();
+
+        let server_entities = server_game_match.get_server_entities();
+
+        self.entities[0].update_from_server_entity(&server_entities[0]);
+        self.entities[1].update_from_server_entity(&server_entities[1]);
     }
 }
 
