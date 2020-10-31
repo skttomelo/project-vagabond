@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 cgmath = {version= "0.17", features=["mint"]}
-# serde_json = "1.0" no longer use this dependency because inconsistencies caused clients and connections to be terminated
+serde_json = "1.0" # no longer use this dependency because inconsistencies caused clients and connections to be terminated
 bincode = "1.3.1"
 ggez = "0.5.1"
 

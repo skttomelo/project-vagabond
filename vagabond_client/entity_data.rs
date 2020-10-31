@@ -257,11 +257,11 @@ impl Entity {
     }
 
     // might implement
+    #[allow(dead_code)]
     pub fn get_movement_animator(&self) -> Animator {
         self.movement_animator.clone()
     }
 
-    // might implement
     pub fn get_attack_animator(&self) -> Animator {
         self.attack_animator.clone()
     }

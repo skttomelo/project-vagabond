@@ -45,8 +45,8 @@ struct MainState {
 }
 
 impl MainState {
-    fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let mut server = TcpStream::connect("127.0.0.1:1337").unwrap();
+    fn new(ctx: &mut Context, ip_address: String) -> GameResult<MainState> {
+        let mut server = TcpStream::connect(ip_address).unwrap();
 
         let mut data = [0u8; 4096];
 
@@ -131,14 +131,9 @@ impl EventHandler for MainState {
         let server_game_match = ServerGameMatch::from_game_match(&self.game_match);
 
         // serialize the data
-        // let serialized_data = serde_json::to_string(&server_game_match).expect("Unable to serialize ServerGameMatch");
         let serialized_data: Vec<u8> = bincode::serialize(&server_game_match).unwrap();
 
-        // convert data to byte array and send to server
-        // let data_as_bytes = serialized_data.into_bytes();
-
         // Send serialized byte data to server
-        // self.server.write(&data_as_bytes).unwrap();
         self.server.write(&serialized_data).unwrap();
 
         // self.server.write_all(&data_as_bytes).expect("Could not write bytes to stream");
@@ -149,11 +144,8 @@ impl EventHandler for MainState {
         let mut data = [0u8; 1024];
 
         self.server.read(&mut data).unwrap();
-        // let mut string_data = String::from(from_utf8(&data).unwrap());
-        // string_data = string_data.trim_matches(char::from(0)).to_owned();
 
         // deserialized data code goes here
-        // let server_match: ServerGameMatch = serde_json::from_str(&string_data).unwrap();
         let server_match: ServerGameMatch = bincode::deserialize(&data).unwrap();
         self.game_match.update_from_server_game_match(&server_match);
 
@@ -206,6 +198,10 @@ impl EventHandler for MainState {
 }
 
 pub fn main() -> GameResult {
+    // command line args
+    let args: Vec<String> = env::args().collect();
+    let ip_address = args[1].clone();
+
     // window
     let window = WindowMode {
         width: SCREEN_WIDTH,
@@ -232,6 +228,6 @@ pub fn main() -> GameResult {
 
     // build and split context builder with window configuration
     let (ctx, event_loop) = &mut cb.window_mode(window).build()?;
-    let state = &mut MainState::new(ctx)?;
+    let state = &mut MainState::new(ctx, ip_address)?;
     event::run(ctx, event_loop, state)
 }

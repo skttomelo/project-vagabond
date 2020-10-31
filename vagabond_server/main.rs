@@ -2,6 +2,7 @@ use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, RwLock};
 use std::thread;
+use std::env;
 
 use bincode;
 
@@ -17,6 +18,10 @@ pub struct ThreadPool {
 pub struct Worker; // will implement later
 
 fn main() {
+    // command line args
+    let args: Vec<String> = env::args().collect();
+    let ip_address = args[1].clone();
+
     // initialize ThreadPool
     let mut thread_pool = ThreadPool{threads: Vec::new()};
 
@@ -28,7 +33,7 @@ fn main() {
     let game_match_inner = game_match.clone();
 
     // bind ip address to server listener
-    let addr = "127.0.0.1:1337";
+    let addr = ip_address;
     let listener = TcpListener::bind(addr).unwrap();
 
     // handle each connection to server
