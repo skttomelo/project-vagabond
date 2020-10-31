@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::entity_data::{Entity, EntityActions};
+use crate::animate::Animator;
 use crate::game_data::GameMatch;
 use crate::geometry::{Point2, Rect};
 use crate::gui_data::Clock;
@@ -42,6 +43,7 @@ pub struct ServerEntity {
     id: usize,
     hp: i8, // health of entity
     entity_actions: EntityActions,
+    attack_animator: ServerAnimator,
     pos: Point2,
     vel: Point2,
     bound: Rect,
@@ -54,6 +56,7 @@ impl ServerEntity {
             id: entity.get_id(),
             hp: entity.get_hp(),
             entity_actions: entity.get_entity_actions(),
+            attack_animator: ServerAnimator::from_animator(&entity.get_attack_animator()),
             pos: entity.get_pos(),
             vel: entity.get_vel(),
             bound: entity.get_bound(),
@@ -87,7 +90,39 @@ impl ServerEntity {
         self.attack_bound.clone()
     }
 
+    pub fn get_attack_animator(&self) -> ServerAnimator {
+        self.attack_animator.clone()
+    }
+
     pub fn get_entity_actions(&self) -> EntityActions {
         self.entity_actions.clone()
+    }
+}
+
+// server will not handle animation timing
+// rather it will facillitate the syncing
+// of frames
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ServerAnimator {
+    current_frame: u64,
+    current_repeat: i8,
+}
+
+impl ServerAnimator {
+    pub fn from_animator(animator: &Animator) -> ServerAnimator {
+        ServerAnimator {
+            current_frame: animator.current_frame() as u64,
+            current_repeat: animator.current_repeat(),
+        }
+    }
+}
+
+impl ServerAnimator {
+    pub fn current_frame(&self) -> usize{
+        self.current_frame as usize
+    }
+    
+    pub fn current_repeat(&self) -> i8 {
+        self.current_repeat
     }
 }

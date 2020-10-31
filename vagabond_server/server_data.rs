@@ -68,6 +68,7 @@ pub struct ServerEntity {
     id: usize,
     hp: i8, // health of entity
     entity_actions: EntityActions,
+    attack_animator: ServerAnimator,
     pos: Point2,
     vel: Point2,
     bound: Rect,
@@ -80,6 +81,7 @@ impl ServerEntity {
             id: 0,
             hp: 5,
             entity_actions: EntityActions::new(Action::Right),
+            attack_animator: ServerAnimator::new(),
             pos: Point2::new(0.0,0.0),
             vel: Point2::new(0.0,0.0),
             bound: Rect::new(Point2::new(0.0,0.0), Point2::new(0.0,0.0)),
@@ -155,3 +157,28 @@ impl Clock {
         Clock { current: 0 }
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ServerAnimator {
+    current_frame: u64,
+    current_repeat: i8,
+}
+
+impl ServerAnimator {
+    pub fn new() -> ServerAnimator {
+        ServerAnimator {
+            current_frame: 0,
+            current_repeat: 0,
+        }
+    }
+}
+
+// impl ServerAnimator {
+//     pub fn current_frame(&self) -> usize{
+//         self.current_frame as usize
+//     }
+    
+//     pub fn current_repeat(&self) -> i8 {
+//         self.current_repeat
+//     }
+// }
