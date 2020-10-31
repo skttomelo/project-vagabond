@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 use crate::geometry::{Point2, Rect};
-use crate::gui_data::Clock;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ServerGameMatch {
@@ -80,5 +79,15 @@ impl EntityActions {
             damage_check: false,
             blocking: false,
         }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Clock {
+    current: u16,
+}
+impl Clock {
+    pub fn new() -> Clock {
+        Clock { current: 0 }
     }
 }

@@ -1,21 +1,28 @@
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
-use std::str::from_utf8;
 use std::sync::{Arc, RwLock};
 use std::thread;
 
-mod game_data;
+use bincode;
+
 mod geometry;
-mod gui_data;
-mod entity_data;
 mod server_data;
 
 use server_data::ServerGameMatch;
 
+pub struct ThreadPool {
+    threads: Vec<thread::JoinHandle<()>>,
+}
+
+pub struct Worker; // will implement later
+
 fn main() {
+    // initialize ThreadPool
+    let mut thread_pool = ThreadPool{threads: Vec::new()};
+
     // create initial match struct and id counter
     let game_match = Arc::new(RwLock::new(ServerGameMatch::new()));
-    let id_counter = Arc::new(RwLock::new(0usize));
+    // let id_counter = Arc::new(RwLock::new(0usize));
 
     // clone so we can move into closure
     let game_match_inner = game_match.clone();
@@ -31,13 +38,19 @@ fn main() {
                 println!("New connection: {}", stream.peer_addr().unwrap());
 
                 let game_match = game_match_inner.clone();
-                let id_counter_inner = id_counter.clone();
-
-                // spawn thread so we can accept more connections
-                thread::spawn(move || {
-                    // connection succeeded
-                    handle_client(stream, game_match, id_counter_inner)
-                });
+                // let id_counter_inner = id_counter.clone();
+                
+                let connection_id = thread_pool.threads.len();
+                println!("{}", &connection_id);
+                if connection_id == 2 {
+                    stream.shutdown(Shutdown::Both).unwrap();
+                } else {
+                    // spawn thread so we can accept more connections
+                    thread_pool.threads.push(thread::spawn(move || {
+                        // connection succeeded
+                        handle_client(stream, game_match, connection_id)
+                    }));
+                }
             }
             Err(e) => {
                 println!("Error: {}", e);
@@ -50,33 +63,9 @@ fn main() {
 fn handle_client(
     mut socket: TcpStream,
     game_match: Arc<RwLock<ServerGameMatch>>,
-    counter: Arc<RwLock<usize>>,
+    id: usize
 ) {
     let mut data = [0u8; 1024];
-
-    let mut string_data: String;
-    let id: usize;
-
-    // check if the server already has two people on it
-    // shut the stream down and return nothing if true
-    {
-        let c = counter.write().unwrap();
-        if *c == 2 {
-            println!(
-                "Closing connection with {} because server is handling max amount of clients",
-                socket.peer_addr().unwrap()
-            );
-            socket.shutdown(Shutdown::Both).unwrap();
-            return;
-        }
-    }
-
-    // increment counter by 1
-    {
-        let mut c = counter.write().unwrap();
-        *c += 1;
-        id = *c - 1;
-    }
 
     socket
         .write_all(&id.to_string().as_bytes())
@@ -95,12 +84,8 @@ fn handle_client(
             false
         }
     } {
-        // read the data in from the socket and write it to a String
-        string_data = String::from(from_utf8(&data).unwrap());
-        string_data = string_data.trim_matches(char::from(0)).to_owned();
-
-        // Deserialize the json data in the String to a ServerGameMatch struct
-        let match_details: ServerGameMatch = serde_json::from_str(&string_data).unwrap();
+        // Deserialize the data to a ServerGameMatch struct
+        let match_details: ServerGameMatch = bincode::deserialize(&data).unwrap();
 
         // update the player's data on the server
         game_match
@@ -112,22 +97,11 @@ fn handle_client(
             .unwrap()
             .update_entity(1, match_details.server_entities[1].clone());
 
-        // Serialize the data on server into json and then send it back to the client
-        let match_details_json = serde_json::to_string(&(*game_match.write().unwrap()))
-            .expect("Could not serialize game match");
+        // Serialize the data on server and then send it back to the client
+        let serialized_data: Vec<u8> = bincode::serialize(&(*game_match.write().unwrap())).unwrap();
+        socket.write(&serialized_data).unwrap();
 
-        socket
-            .write_all(&match_details_json.as_bytes())
-            .expect("Could not write data to stream");
         socket.flush().expect("Could not flush stream");
-    }
-
-    // decrement counter by 1
-    {
-        let mut c = counter.write().unwrap();
-        if *c > 0 {
-            *c -= 1;
-        }
     }
 
     socket.shutdown(Shutdown::Both).unwrap();

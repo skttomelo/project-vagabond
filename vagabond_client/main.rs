@@ -8,7 +8,8 @@ use ggez::{Context, GameResult};
 
 use cgmath::Vector2;
 
-use serde_json;
+// use serde_json;
+use bincode;
 
 use std::env;
 use std::net::{TcpStream}; // Shutdown
@@ -130,14 +131,17 @@ impl EventHandler for MainState {
         let server_game_match = ServerGameMatch::from_game_match(&self.game_match);
 
         // serialize the data
-        let serialized_data = serde_json::to_string(&server_game_match).expect("Unable to serialize ServerGameMatch");
-        println!("{}", &serialized_data);
+        // let serialized_data = serde_json::to_string(&server_game_match).expect("Unable to serialize ServerGameMatch");
+        let serialized_data: Vec<u8> = bincode::serialize(&server_game_match).unwrap();
 
         // convert data to byte array and send to server
-        let data_as_bytes = serialized_data.into_bytes();
+        // let data_as_bytes = serialized_data.into_bytes();
 
         // Send serialized byte data to server
-        self.server.write_all(&data_as_bytes).expect("Could not write bytes to stream");
+        // self.server.write(&data_as_bytes).unwrap();
+        self.server.write(&serialized_data).unwrap();
+
+        // self.server.write_all(&data_as_bytes).expect("Could not write bytes to stream");
         self.server.flush().expect("Could not flush stream");
 
 
@@ -145,11 +149,12 @@ impl EventHandler for MainState {
         let mut data = [0u8; 1024];
 
         self.server.read(&mut data).unwrap();
-        let mut string_data = String::from(from_utf8(&data).unwrap());
-        string_data = string_data.trim_matches(char::from(0)).to_owned();
+        // let mut string_data = String::from(from_utf8(&data).unwrap());
+        // string_data = string_data.trim_matches(char::from(0)).to_owned();
 
         // deserialized data code goes here
-        let server_match: ServerGameMatch = serde_json::from_str(&string_data).unwrap();
+        // let server_match: ServerGameMatch = serde_json::from_str(&string_data).unwrap();
+        let server_match: ServerGameMatch = bincode::deserialize(&data).unwrap();
         self.game_match.update_from_server_game_match(&server_match);
 
         // update the match on client end
