@@ -20,9 +20,48 @@ impl ServerGameMatch {
     }
 
     pub fn update_entity(&mut self, id: usize, player: ServerEntity) {
+        let hp = self.server_entities[id].hp;
         self.server_entities[id] = player;
+        self.server_entities[id].hp = hp;
+        
+        // check if there is a collision
+        for index in 0..self.server_entities.len() {
+            if id == index {
+                continue
+            }
+
+            self.attack_bound_check(id, index);
+        }
+    }
+
+    fn attack_bound_check(&mut self, first_entity_id: usize, second_entity_id: usize) {
+        if self.server_entities[first_entity_id]
+            .get_entity_actions_as_ref()
+            .damage_check
+            == true
+            && self.server_entities[first_entity_id]
+                .get_entity_actions_as_ref()
+                .blocking
+                == false
+            && self.server_entities[second_entity_id]
+                .get_entity_actions_as_ref()
+                .blocking
+                == false
+        {
+            if self.server_entities[first_entity_id]
+                .get_attack_bound()
+                .check_bounds(&self.server_entities[second_entity_id].get_bound())
+                == true
+            {
+                self.server_entities[second_entity_id].take_damage(1);
+            }
+        }
+        self.server_entities[first_entity_id]
+            .get_entity_actions_as_mut_ref()
+            .damage_check = false;
     }
 }
+
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct ServerEntity {
@@ -79,6 +118,31 @@ impl EntityActions {
             damage_check: false,
             blocking: false,
         }
+    }
+}
+
+impl ServerEntity {
+    // TODO: move to server
+    pub fn take_damage(&mut self, dmg: i8) {
+        if self.hp > 0 {
+            self.hp -= dmg;
+        }
+    }
+
+    pub fn get_bound(&self) -> Rect {
+        self.bound.clone()
+    }
+
+    pub fn get_attack_bound(&self) -> Rect {
+        self.attack_bound.clone()
+    }
+
+    pub fn get_entity_actions_as_ref(&mut self) -> &EntityActions {
+        &self.entity_actions
+    }
+
+    pub fn get_entity_actions_as_mut_ref(&mut self) -> &mut EntityActions {
+        &mut self.entity_actions
     }
 }
 

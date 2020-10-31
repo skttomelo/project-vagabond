@@ -240,12 +240,6 @@ impl Entity {
         self.hp
     }
 
-    pub fn take_damage(&mut self, dmg: i8) {
-        if self.hp > 0 {
-            self.hp -= dmg;
-        }
-    }
-
     pub fn get_pos(&self) -> Point2 {
         self.pos.clone()
     }
@@ -262,16 +256,18 @@ impl Entity {
         self.attack_bound.clone()
     }
 
+    // might implement
+    pub fn get_movement_animator(&self) -> Animator {
+        self.movement_animator.clone()
+    }
+
+    // might implement
+    pub fn get_attack_animator(&self) -> Animator {
+        self.attack_animator.clone()
+    }
+
     pub fn get_entity_actions(&self) -> EntityActions {
         self.entity_actions.clone()
-    }
-
-    pub fn get_entity_actions_as_ref(&mut self) -> &EntityActions {
-        &self.entity_actions
-    }
-
-    pub fn get_entity_actions_as_mut_ref(&mut self) -> &mut EntityActions {
-        &mut self.entity_actions
     }
 }
 

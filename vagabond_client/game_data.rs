@@ -42,12 +42,6 @@ impl GameMatch {
         self.entities[0].update().unwrap();
         self.entities[1].update().unwrap();
 
-        // player 1 is attacking
-        self.attack_bound_check(0, 1);
-
-        // player 2 is attacking
-        self.attack_bound_check(1, 0);
-
         self.health_bar_1.update(self.entities[0].get_hp());
         self.health_bar_2.update(self.entities[1].get_hp());
 
@@ -77,33 +71,6 @@ impl GameMatch {
         self.clock.draw(ctx, font).unwrap();
 
         Ok(())
-    }
-
-    fn attack_bound_check(&mut self, first_entity_id: usize, second_entity_id: usize) {
-        if self.entities[first_entity_id]
-            .get_entity_actions_as_ref()
-            .damage_check
-            == true
-            && self.entities[first_entity_id]
-                .get_entity_actions_as_ref()
-                .blocking
-                == false
-            && self.entities[second_entity_id]
-                .get_entity_actions_as_ref()
-                .blocking
-                == false
-        {
-            if self.entities[first_entity_id]
-                .get_attack_bound()
-                .check_bounds(&self.entities[second_entity_id].get_bound())
-                == true
-            {
-                self.entities[second_entity_id].take_damage(1);
-            }
-        }
-        self.entities[first_entity_id]
-            .get_entity_actions_as_mut_ref()
-            .damage_check = false;
     }
 }
 

@@ -40,21 +40,4 @@ impl Rect {
         self.bottom_right.x += vel.x;
         self.bottom_right.y += vel.y;
     }
-
-    // checks to see if two Rects are intersecting
-    // using solution found here: https://www.geeksforgeeks.org/find-two-rectangles-overlap/
-    // however I had to make an adjustment because their bound check for the Y-axis was wrong
-    pub fn check_bounds(self, rect: &Rect) -> bool {
-        // if one rectangle is on left side of other
-        if self.top_left.x >= rect.bottom_right.x || rect.top_left.x >= self.bottom_right.x {
-            return false;
-        }
-
-        // if one rectangle is above other
-        if self.top_left.y >= rect.bottom_right.y || rect.top_left.y >= self.bottom_right.y {
-            return false;
-        }
-
-        true
-    }
 }

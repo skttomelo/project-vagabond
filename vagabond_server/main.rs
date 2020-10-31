@@ -91,11 +91,7 @@ fn handle_client(
         game_match
             .write()
             .unwrap()
-            .update_entity(0, match_details.server_entities[0].clone());
-        game_match
-            .write()
-            .unwrap()
-            .update_entity(1, match_details.server_entities[1].clone());
+            .update_entity(id, match_details.server_entities[id].clone());
 
         // Serialize the data on server and then send it back to the client
         let serialized_data: Vec<u8> = bincode::serialize(&(*game_match.write().unwrap())).unwrap();
