@@ -3,12 +3,15 @@ use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::env;
+use std::time::Duration;
 
 use bincode;
 
 mod geometry;
+mod animate;
 mod server_data;
 
+use animate::Animator;
 use server_data::ServerGameMatch;
 
 pub struct ThreadPool {
@@ -28,6 +31,7 @@ fn main() {
     // create initial match struct and id counter
     let game_match = Arc::new(RwLock::new(ServerGameMatch::new()));
     // let id_counter = Arc::new(RwLock::new(0usize));
+    let clock_timer = Arc::new(RwLock::new(Animator::new(60, Duration::from_secs(1))));
 
     // clone so we can move into closure
     let game_match_inner = game_match.clone();
@@ -44,6 +48,7 @@ fn main() {
 
                 let game_match = game_match_inner.clone();
                 // let id_counter_inner = id_counter.clone();
+                let clock_timer_inner = clock_timer.clone();
                 
                 let connection_id = thread_pool.threads.len();
                 println!("{}", &connection_id);
@@ -53,7 +58,7 @@ fn main() {
                     // spawn thread so we can accept more connections
                     thread_pool.threads.push(thread::spawn(move || {
                         // connection succeeded
-                        handle_client(stream, game_match, connection_id)
+                        handle_client(stream, game_match, clock_timer_inner, connection_id)
                     }));
                 }
             }
@@ -68,6 +73,7 @@ fn main() {
 fn handle_client(
     mut socket: TcpStream,
     game_match: Arc<RwLock<ServerGameMatch>>,
+    clock_timer: Arc<RwLock<Animator>>,
     id: usize
 ) {
     let mut data = [0u8; 1024];
@@ -76,6 +82,10 @@ fn handle_client(
         .write_all(&id.to_string().as_bytes())
         .expect("Unable to write id value to stream");
     socket.flush().expect("Unable to flush stream");
+
+    if id == 1 {
+        clock_timer.write().unwrap().paused = false;
+    }
 
     // establish connection loop
     while match socket.read(&mut data) {
@@ -93,6 +103,11 @@ fn handle_client(
         let match_details: ServerGameMatch = bincode::deserialize(&data).unwrap();
 
         // update the player's data on the server
+        clock_timer.write().unwrap().update();
+        
+        let current_time = clock_timer.read().unwrap().current_frame();
+        game_match.write().unwrap().update_clock(current_time);
+
         game_match
             .write()
             .unwrap()

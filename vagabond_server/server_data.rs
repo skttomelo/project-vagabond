@@ -34,6 +34,10 @@ impl ServerGameMatch {
         }
     }
 
+    pub fn update_clock(&mut self, current_time: u16) {
+        self.clock.current = 60-current_time;
+    }
+
     fn attack_bound_check(&mut self, first_entity_id: usize, second_entity_id: usize) {
         if self.server_entities[first_entity_id]
             .get_entity_actions_as_ref()
