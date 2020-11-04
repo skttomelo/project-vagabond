@@ -9,4 +9,8 @@ No matter how you plan to run the project, either as an executable or via cargo,
 2. `cargo run --release --bin client [ip_address:port]`
 # Assets
 - Art Assets provided by my wife
-- Sound Assets TBD
+# Post Senior Project Plans
+- Implement audio
+- Sudden Death Round (already have the art for the round created)
+- Better damage feedback
+- Beginning menu screen where you can enter ip there instead of having to do it via the terminal (TBD)
