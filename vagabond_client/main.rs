@@ -200,7 +200,10 @@ impl EventHandler for MainState {
 pub fn main() -> GameResult {
     // command line args
     let args: Vec<String> = env::args().collect();
-    let ip_address = args[1].clone();
+    let ip_address = match args.len() {
+        2 => args[1].clone(),
+        _ => String::from("127.0.0.1:1337"),
+    };
 
     // window
     let window = WindowMode {

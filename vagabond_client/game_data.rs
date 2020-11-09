@@ -50,9 +50,11 @@ impl GameMatch {
 
     pub fn update(&mut self) -> GameResult {
         // update entities
-        if self.entities[0].get_hp() > 0 || self.entities[1].get_hp() > 0 {
+        if self.entities[0].get_hp() > 0 && self.entities[1].get_hp() > 0 && self.clock.get_current_time() > 0 {
             self.entities[0].update().unwrap();
             self.entities[1].update().unwrap();
+        } else {
+            self.match_status = MatchStatus::Over(self.get_player_id_most_hp()+1);
         }
         self.health_bar_1.update(self.entities[0].get_hp());
         self.health_bar_2.update(self.entities[1].get_hp());
@@ -82,11 +84,10 @@ impl GameMatch {
         self.clock.draw(ctx, font).unwrap();
 
         // draw match winner text
-        // match self.match_status {
-            // MatchStatus::Over(player_id) => {
-                
+        match self.match_status {
+            MatchStatus::Over(player_id) => {       
                 let mut text_string = String::from("Player ");
-                text_string.push_str("1"); // &player_id.to_string()
+                text_string.push_str(&player_id.to_string()); 
                 text_string.push_str(" has won.");
                 let (text, mesh) = create_text_with_background(ctx, text_string, font.clone(), ggez::graphics::Scale::uniform(36.0));
                 
@@ -94,9 +95,9 @@ impl GameMatch {
 
                 ggez::graphics::draw(ctx, &mesh, DrawParam::new().dest(location.as_mint_point())).unwrap();
                 ggez::graphics::draw(ctx, &text, DrawParam::new().dest(location.as_mint_point())).unwrap();
-        //     },
-        //     _ => (), // match is still playing out
-        // }
+            },
+            _ => (), // match is still playing out
+        }
 
         Ok(())
     }
@@ -104,6 +105,13 @@ impl GameMatch {
 
 // accessors
 impl GameMatch {
+    pub fn get_player_id_most_hp(&self) -> usize {
+        if self.entities[0].get_hp() > self.entities[1].get_hp() {
+            return 0;
+        }
+
+        1
+    }
     pub fn get_clock(&self) -> Clock {
         self.clock.clone()
     }
