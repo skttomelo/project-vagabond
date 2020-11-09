@@ -105,15 +105,6 @@ impl Clock {
         Clock { current: 0 }
     }
 
-    // will be used when deserializing data
-    // #[allow(dead_code)]
-    // pub fn update(&mut self, time: u16) {
-    //     self.current = time;
-    // }
-    pub fn get_current_time(&self) -> u16 {
-        self.current
-    }
-
     pub fn draw(&self, ctx: &mut Context, font: &Font) -> GameResult {
         let scale = graphics::Scale::uniform(36.0);
 

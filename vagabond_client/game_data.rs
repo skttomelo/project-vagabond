@@ -3,6 +3,8 @@ use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics::{DrawParam, Font, Image};
 use ggez::{Context, GameResult};
 
+use serde::{Serialize, Deserialize};
+
 use crate::entity_data::Entity;
 use crate::gui_data::{Clock, HealthBar, create_text_with_background};
 use crate::geometry::Point2;
@@ -15,7 +17,8 @@ pub trait ControlledActor {
     fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods);
 }
 
-enum MatchStatus {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum MatchStatus {
     InProgress,
     Over(usize), // player id will go in the usize
 }
@@ -50,12 +53,14 @@ impl GameMatch {
 
     pub fn update(&mut self) -> GameResult {
         // update entities
-        if self.entities[0].get_hp() > 0 && self.entities[1].get_hp() > 0 && self.clock.get_current_time() > 0 {
-            self.entities[0].update().unwrap();
-            self.entities[1].update().unwrap();
-        } else {
-            self.match_status = MatchStatus::Over(self.get_player_id_most_hp()+1);
+        match &self.match_status {
+            MatchStatus::InProgress => {
+                self.entities[0].update().unwrap();
+                self.entities[1].update().unwrap();
+            },
+            _ => ()
         }
+
         self.health_bar_1.update(self.entities[0].get_hp());
         self.health_bar_2.update(self.entities[1].get_hp());
 
@@ -105,12 +110,8 @@ impl GameMatch {
 
 // accessors
 impl GameMatch {
-    pub fn get_player_id_most_hp(&self) -> usize {
-        if self.entities[0].get_hp() > self.entities[1].get_hp() {
-            return 0;
-        }
-
-        1
+    pub fn get_match_status(&self) -> MatchStatus {
+        self.match_status.clone()
     }
     pub fn get_clock(&self) -> Clock {
         self.clock.clone()
@@ -124,7 +125,7 @@ impl GameMatch {
 impl GameMatch {
     pub fn update_from_server_game_match(&mut self, server_game_match: &ServerGameMatch) {
         self.clock = server_game_match.get_clock();
-        // self.match_status = server_game_match.get_match_status();
+        self.match_status = server_game_match.get_match_status();
 
         let server_entities = server_game_match.get_server_entities();
 

@@ -2,10 +2,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::geometry::{Point2, Rect};
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum MatchStatus {
+    InProgress,
+    Over(usize), // player id will go in the usize
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ServerGameMatch {
     pub clock: Clock,
     pub server_entities: Vec<ServerEntity>,
+    pub match_status: MatchStatus
 }
 
 impl ServerGameMatch {
@@ -16,22 +23,35 @@ impl ServerGameMatch {
         ServerGameMatch {
             clock: Clock::new(),
             server_entities: entity_vector,
+            match_status: MatchStatus::InProgress,
         }
     }
 
     pub fn update_entity(&mut self, id: usize, player: ServerEntity) {
-        let hp = self.server_entities[id].hp;
-        self.server_entities[id] = player;
-        self.server_entities[id].hp = hp;
-        
-        // check if there is a collision
-        for index in 0..self.server_entities.len() {
-            if id == index {
-                continue
-            }
+        if self.server_entities[0].hp > 0 && self.server_entities[1].hp > 0 && self.clock.current > 0 {
+            let hp = self.server_entities[id].hp;
+            self.server_entities[id] = player;
+            self.server_entities[id].hp = hp;
+            
+            // check if there is a collision
+            for index in 0..self.server_entities.len() {
+                if id == index {
+                    continue
+                }
 
-            self.attack_bound_check(id, index);
+                self.attack_bound_check(id, index);
+            }
+        } else {
+            self.match_status = MatchStatus::Over(self.get_player_id_most_hp()+1);
         }
+    }
+
+    fn get_player_id_most_hp(&self) -> usize {
+        if self.server_entities[0].hp > self.server_entities[1].hp {
+            return 0;
+        }
+
+        1
     }
 
     pub fn update_clock(&mut self, current_time: u16) {
