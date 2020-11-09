@@ -148,7 +148,6 @@ impl EntityActions {
 }
 
 impl ServerEntity {
-    // TODO: move to server
     pub fn take_damage(&mut self, dmg: i8) {
         if self.hp > 0 {
             self.hp -= dmg;
@@ -196,13 +195,3 @@ impl ServerAnimator {
         }
     }
 }
-
-// impl ServerAnimator {
-//     pub fn current_frame(&self) -> usize{
-//         self.current_frame as usize
-//     }
-    
-//     pub fn current_repeat(&self) -> i8 {
-//         self.current_repeat
-//     }
-// }

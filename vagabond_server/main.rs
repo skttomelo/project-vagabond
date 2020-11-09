@@ -12,7 +12,7 @@ mod animate;
 mod server_data;
 
 use animate::Animator;
-use server_data::ServerGameMatch;
+use server_data::{ServerGameMatch, MatchStatus};
 
 pub struct ThreadPool {
     threads: Vec<thread::JoinHandle<()>>,
@@ -106,7 +106,10 @@ fn handle_client(
         let match_details: ServerGameMatch = bincode::deserialize(&data).unwrap();
 
         // update the player's data on the server
-        clock_timer.write().unwrap().update();
+        match game_match.read().unwrap().match_status {
+            MatchStatus::InProgress => clock_timer.write().unwrap().update(),
+            _ => ()
+        }
         
         let current_time = clock_timer.read().unwrap().current_frame();
         game_match.write().unwrap().update_clock(current_time);
