@@ -1,5 +1,5 @@
 use ggez::graphics;
-use ggez::graphics::{Color, DrawParam, Font, Text, TextFragment};
+use ggez::graphics::{Color, DrawParam, Font, Text, TextFragment, Mesh};
 use ggez::{Context, GameResult};
 
 use serde::{Deserialize, Serialize};
@@ -114,38 +114,44 @@ impl Clock {
     pub fn draw(&self, ctx: &mut Context, font: &Font) -> GameResult {
         let scale = graphics::Scale::uniform(36.0);
 
-        let text_fragment = TextFragment::new(self.current.to_string())
-            .scale(scale)
-            .font(font.clone());
+        let (timer_text, rect_mesh) = create_text_with_background(ctx, self.current.to_string(), font.clone(), scale);
 
-        let mut timer_text = Text::new(text_fragment);
+        let location = Point2::new((SCREEN_WIDTH / 2.0) - (timer_text.width(ctx) as f32 / 2.0), 0.0);
 
-        let timer_text_width = timer_text.width(ctx) as f32;
-        let timer_text_height = timer_text.height(ctx) as f32;
-
-        let location = Point2::new((SCREEN_WIDTH / 2.0) - (timer_text_width / 2.0), 0.0);
-
-        let mut mesh_builder = graphics::MeshBuilder::new();
-        let text_background_rect =
-            graphics::Rect::new(location.x, location.y, timer_text_width, timer_text_height);
-        let rect_mesh = mesh_builder
-            .rectangle(
-                graphics::DrawMode::Fill(graphics::FillOptions::default()),
-                text_background_rect,
-                Color::new(0.25, 0.25, 0.25, 0.75),
-            )
-            .build(ctx)
-            .unwrap();
-
-        graphics::draw(ctx, &rect_mesh, DrawParam::new()).unwrap();
+        graphics::draw(ctx, &rect_mesh, DrawParam::new().dest(location.as_mint_point())).unwrap();
 
         graphics::draw(
             ctx,
-            timer_text.set_font(font.clone(), scale),
+            &timer_text,
             DrawParam::new().dest(location.as_mint_point()),
         )
         .unwrap();
 
         Ok(())
     }
+}
+
+pub fn create_text_with_background(ctx: &mut Context, text: String, font: Font, scale: graphics::Scale) -> (Text, Mesh) {
+    let text_fragment = TextFragment::new(text.to_string())
+            .scale(scale)
+            .font(font.clone());
+
+    let text_graphic = Text::new(text_fragment);
+
+    let text_width = text_graphic.width(ctx) as f32;
+    let text_height = text_graphic.height(ctx) as f32;
+
+    let mut mesh_builder = graphics::MeshBuilder::new();
+    let text_background_rect =
+        graphics::Rect::new(0.0, 0.0, text_width, text_height); // you will have to change the destination after it's creation
+    let rect_mesh = mesh_builder
+        .rectangle(
+            graphics::DrawMode::Fill(graphics::FillOptions::default()),
+            text_background_rect,
+            Color::new(0.25, 0.25, 0.25, 0.75),
+        )
+        .build(ctx)
+        .unwrap();
+    
+    (text_graphic, rect_mesh)
 }

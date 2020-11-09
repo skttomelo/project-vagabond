@@ -45,10 +45,6 @@ impl Animator {
         if self.current_frame != self.total_frames {
             self.current_frame += 1;
         }
-
-        if self.current_frame == self.total_frames {
-            self.current_frame = 0;
-        }
     }
 
     // ending animation and resetting

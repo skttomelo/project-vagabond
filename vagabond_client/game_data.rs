@@ -4,7 +4,9 @@ use ggez::graphics::{DrawParam, Font, Image};
 use ggez::{Context, GameResult};
 
 use crate::entity_data::Entity;
-use crate::gui_data::{Clock, HealthBar};
+use crate::gui_data::{Clock, HealthBar, create_text_with_background};
+use crate::geometry::Point2;
+use crate::constants::{SCREEN_WIDTH, SCREEN_HEIGHT};
 use crate::server_data::ServerGameMatch;
 
 // user controlled entities require this
@@ -13,11 +15,17 @@ pub trait ControlledActor {
     fn key_up_event(&mut self, keycode: KeyCode, _keymods: KeyMods);
 }
 
+enum MatchStatus {
+    InProgress,
+    Over(usize), // player id will go in the usize
+}
+
 pub struct GameMatch {
     pub id: usize,
     clock: Clock,
     health_bar_1: HealthBar,
     health_bar_2: HealthBar,
+    match_status: MatchStatus,
     pub entities: Vec<Entity>,
 }
 
@@ -28,20 +36,24 @@ impl GameMatch {
         let ent1 = Entity::new(1);
         let hp_bar_2 = HealthBar::new(1);
         let entity_vector = vec![ent, ent1];
+        let match_status = MatchStatus::InProgress;
+
         GameMatch {
             id: id,
             clock: Clock::new(),
             health_bar_1: hp_bar_1,
             health_bar_2: hp_bar_2,
+            match_status: match_status,
             entities: entity_vector,
         }
     }
 
     pub fn update(&mut self) -> GameResult {
         // update entities
-        self.entities[0].update().unwrap();
-        self.entities[1].update().unwrap();
-
+        if self.entities[0].get_hp() > 0 || self.entities[1].get_hp() > 0 {
+            self.entities[0].update().unwrap();
+            self.entities[1].update().unwrap();
+        }
         self.health_bar_1.update(self.entities[0].get_hp());
         self.health_bar_2.update(self.entities[1].get_hp());
 
@@ -67,8 +79,24 @@ impl GameMatch {
         self.health_bar_2.draw(ctx).unwrap();
 
         // draw clock
-
         self.clock.draw(ctx, font).unwrap();
+
+        // draw match winner text
+        // match self.match_status {
+            // MatchStatus::Over(player_id) => {
+                
+                let mut text_string = String::from("Player ");
+                text_string.push_str("1"); // &player_id.to_string()
+                text_string.push_str(" has won.");
+                let (text, mesh) = create_text_with_background(ctx, text_string, font.clone(), ggez::graphics::Scale::uniform(36.0));
+                
+                let location = Point2::new((SCREEN_WIDTH / 2.0) - (text.width(ctx) as f32 / 2.0), (SCREEN_HEIGHT / 2.0) - (text.height(ctx) as f32 / 2.0));
+
+                ggez::graphics::draw(ctx, &mesh, DrawParam::new().dest(location.as_mint_point())).unwrap();
+                ggez::graphics::draw(ctx, &text, DrawParam::new().dest(location.as_mint_point())).unwrap();
+        //     },
+        //     _ => (), // match is still playing out
+        // }
 
         Ok(())
     }
@@ -88,6 +116,7 @@ impl GameMatch {
 impl GameMatch {
     pub fn update_from_server_game_match(&mut self, server_game_match: &ServerGameMatch) {
         self.clock = server_game_match.get_clock();
+        // self.match_status = server_game_match.get_match_status();
 
         let server_entities = server_game_match.get_server_entities();
 
