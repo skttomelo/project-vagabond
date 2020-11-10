@@ -1,18 +1,18 @@
+use std::env;
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, RwLock};
 use std::thread;
-use std::env;
 use std::time::Duration;
 
 use bincode;
 
-mod geometry;
 mod animate;
+mod geometry;
 mod server_data;
 
 use animate::Animator;
-use server_data::{ServerGameMatch, MatchStatus};
+use server_data::{MatchStatus, ServerGameMatch};
 
 pub struct ThreadPool {
     threads: Vec<thread::JoinHandle<()>>,
@@ -29,7 +29,9 @@ fn main() {
     };
 
     // initialize ThreadPool
-    let mut thread_pool = ThreadPool{threads: Vec::new()};
+    let mut thread_pool = ThreadPool {
+        threads: Vec::new(),
+    };
 
     // create initial match struct and id counter
     let game_match = Arc::new(RwLock::new(ServerGameMatch::new()));
@@ -52,7 +54,7 @@ fn main() {
                 let game_match = game_match_inner.clone();
                 // let id_counter_inner = id_counter.clone();
                 let clock_timer_inner = clock_timer.clone();
-                
+
                 let connection_id = thread_pool.threads.len();
                 println!("{}", &connection_id);
                 if connection_id == 2 {
@@ -77,7 +79,7 @@ fn handle_client(
     mut socket: TcpStream,
     game_match: Arc<RwLock<ServerGameMatch>>,
     clock_timer: Arc<RwLock<Animator>>,
-    id: usize
+    id: usize,
 ) {
     let mut data = [0u8; 1024];
 
@@ -108,9 +110,9 @@ fn handle_client(
         // update the player's data on the server
         match game_match.read().unwrap().match_status {
             MatchStatus::InProgress => clock_timer.write().unwrap().update(),
-            _ => ()
+            _ => (),
         }
-        
+
         let current_time = clock_timer.read().unwrap().current_frame();
         game_match.write().unwrap().update_clock(current_time);
 

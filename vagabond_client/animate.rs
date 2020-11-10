@@ -80,5 +80,5 @@ impl Animator {
     pub fn update_from_server_animator(&mut self, server_animator: &ServerAnimator) {
         self.current_frame = server_animator.current_frame();
         self.current_repeat = server_animator.current_repeat();
-    } 
+    }
 }

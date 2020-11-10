@@ -12,9 +12,9 @@ use cgmath::Vector2;
 use bincode;
 
 use std::env;
-use std::net::{TcpStream}; // Shutdown
-use std::path::{Path, PathBuf};
 use std::io::{Read, Write};
+use std::net::TcpStream; // Shutdown
+use std::path::{Path, PathBuf};
 use std::str::from_utf8;
 
 mod animate;
@@ -138,7 +138,6 @@ impl EventHandler for MainState {
 
         // self.server.write_all(&data_as_bytes).expect("Could not write bytes to stream");
         self.server.flush().expect("Could not flush stream");
-
 
         // code for receiving the data from the server goes here
         let mut data = [0u8; 1024];

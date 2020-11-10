@@ -3,12 +3,12 @@ use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics::{DrawParam, Font, Image};
 use ggez::{Context, GameResult};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
+use crate::constants::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::entity_data::Entity;
-use crate::gui_data::{Clock, HealthBar, create_text_with_background};
 use crate::geometry::Point2;
-use crate::constants::{SCREEN_WIDTH, SCREEN_HEIGHT};
+use crate::gui_data::{create_text_with_background, Clock, HealthBar};
 use crate::server_data::ServerGameMatch;
 
 // user controlled entities require this
@@ -57,8 +57,8 @@ impl GameMatch {
             MatchStatus::InProgress => {
                 self.entities[0].update().unwrap();
                 self.entities[1].update().unwrap();
-            },
-            _ => ()
+            }
+            _ => (),
         }
 
         self.health_bar_1.update(self.entities[0].get_hp());
@@ -85,22 +85,43 @@ impl GameMatch {
         self.health_bar_1.draw(ctx).unwrap();
         self.health_bar_2.draw(ctx).unwrap();
 
+        // remove later
+        // let button = crate::gui_data::Button::new(
+        //     ctx,
+        //     String::from("test"),
+        //     &font,
+        //     ggez::graphics::Scale::uniform(36.0),
+        //     Point2::new(400.0, 300.0),
+        //     true,
+        // );
+        // button.draw(ctx).unwrap();
+
         // draw clock
         self.clock.draw(ctx, font).unwrap();
 
         // draw match winner text
         match self.match_status {
-            MatchStatus::Over(player_id) => {       
+            MatchStatus::Over(player_id) => {
                 let mut text_string = String::from("Player ");
-                text_string.push_str(&player_id.to_string()); 
+                text_string.push_str(&player_id.to_string());
                 text_string.push_str(" has won.");
-                let (text, mesh) = create_text_with_background(ctx, text_string, font.clone(), ggez::graphics::Scale::uniform(36.0));
-                
-                let location = Point2::new((SCREEN_WIDTH / 2.0) - (text.width(ctx) as f32 / 2.0), (SCREEN_HEIGHT / 2.0) - (text.height(ctx) as f32 / 2.0));
+                let (text, mesh) = create_text_with_background(
+                    ctx,
+                    text_string,
+                    font.clone(),
+                    ggez::graphics::Scale::uniform(36.0),
+                );
 
-                ggez::graphics::draw(ctx, &mesh, DrawParam::new().dest(location.as_mint_point())).unwrap();
-                ggez::graphics::draw(ctx, &text, DrawParam::new().dest(location.as_mint_point())).unwrap();
-            },
+                let location = Point2::new(
+                    (SCREEN_WIDTH / 2.0) - (text.width(ctx) as f32 / 2.0),
+                    (SCREEN_HEIGHT / 2.0) - (text.height(ctx) as f32 / 2.0),
+                );
+
+                ggez::graphics::draw(ctx, &mesh, DrawParam::new().dest(location.as_mint_point()))
+                    .unwrap();
+                ggez::graphics::draw(ctx, &text, DrawParam::new().dest(location.as_mint_point()))
+                    .unwrap();
+            }
             _ => (), // match is still playing out
         }
 

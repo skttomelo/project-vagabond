@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::entity_data::{Entity, EntityActions};
 use crate::animate::Animator;
+use crate::entity_data::{Entity, EntityActions};
 use crate::game_data::{GameMatch, MatchStatus};
 use crate::geometry::{Point2, Rect};
 use crate::gui_data::Clock;
@@ -10,7 +10,7 @@ use crate::gui_data::Clock;
 pub struct ServerGameMatch {
     clock: Clock,
     server_entities: Vec<ServerEntity>,
-    match_status: MatchStatus
+    match_status: MatchStatus,
 }
 
 impl ServerGameMatch {
@@ -26,7 +26,7 @@ impl ServerGameMatch {
         ServerGameMatch {
             clock: game_match.get_clock(),
             server_entities: server_entities,
-            match_status: match_status
+            match_status: match_status,
         }
     }
 }
@@ -124,10 +124,10 @@ impl ServerAnimator {
 }
 
 impl ServerAnimator {
-    pub fn current_frame(&self) -> usize{
+    pub fn current_frame(&self) -> usize {
         self.current_frame as usize
     }
-    
+
     pub fn current_repeat(&self) -> i8 {
         self.current_repeat
     }

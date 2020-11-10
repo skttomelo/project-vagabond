@@ -12,7 +12,7 @@ pub enum MatchStatus {
 pub struct ServerGameMatch {
     pub clock: Clock,
     pub server_entities: Vec<ServerEntity>,
-    pub match_status: MatchStatus
+    pub match_status: MatchStatus,
 }
 
 impl ServerGameMatch {
@@ -28,21 +28,24 @@ impl ServerGameMatch {
     }
 
     pub fn update_entity(&mut self, id: usize, player: ServerEntity) {
-        if self.server_entities[0].hp > 0 && self.server_entities[1].hp > 0 && self.clock.current > 0 {
+        if self.server_entities[0].hp > 0
+            && self.server_entities[1].hp > 0
+            && self.clock.current > 0
+        {
             let hp = self.server_entities[id].hp;
             self.server_entities[id] = player;
             self.server_entities[id].hp = hp;
-            
+
             // check if there is a collision
             for index in 0..self.server_entities.len() {
                 if id == index {
-                    continue
+                    continue;
                 }
 
                 self.attack_bound_check(id, index);
             }
         } else {
-            self.match_status = MatchStatus::Over(self.get_player_id_most_hp()+1);
+            self.match_status = MatchStatus::Over(self.get_player_id_most_hp() + 1);
         }
     }
 
@@ -55,7 +58,7 @@ impl ServerGameMatch {
     }
 
     pub fn update_clock(&mut self, current_time: u16) {
-        self.clock.current = 60-current_time;
+        self.clock.current = 60 - current_time;
     }
 
     fn attack_bound_check(&mut self, first_entity_id: usize, second_entity_id: usize) {
@@ -86,7 +89,6 @@ impl ServerGameMatch {
     }
 }
 
-
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct ServerEntity {
     id: usize,
@@ -106,10 +108,10 @@ impl ServerEntity {
             hp: 5,
             entity_actions: EntityActions::new(Action::Right),
             attack_animator: ServerAnimator::new(),
-            pos: Point2::new(0.0,0.0),
-            vel: Point2::new(0.0,0.0),
-            bound: Rect::new(Point2::new(0.0,0.0), Point2::new(0.0,0.0)),
-            attack_bound: Rect::new(Point2::new(0.0,0.0), Point2::new(0.0,0.0)),
+            pos: Point2::new(0.0, 0.0),
+            vel: Point2::new(0.0, 0.0),
+            bound: Rect::new(Point2::new(0.0, 0.0), Point2::new(0.0, 0.0)),
+            attack_bound: Rect::new(Point2::new(0.0, 0.0), Point2::new(0.0, 0.0)),
         }
     }
 }

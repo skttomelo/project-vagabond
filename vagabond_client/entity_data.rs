@@ -277,7 +277,8 @@ impl Entity {
         self.id = server_entity.get_id();
         self.hp = server_entity.get_hp();
         self.entity_actions = server_entity.get_entity_actions();
-        self.attack_animator.update_from_server_animator(&server_entity.get_attack_animator());
+        self.attack_animator
+            .update_from_server_animator(&server_entity.get_attack_animator());
         self.pos = server_entity.get_pos();
         self.vel = server_entity.get_vel();
         self.bound = server_entity.get_bound();

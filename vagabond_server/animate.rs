@@ -6,7 +6,7 @@ pub struct Animator {
     total_frames: usize,
     current_time: Option<Instant>,
     frame_duration: Duration,
-    pub paused: bool
+    pub paused: bool,
 }
 
 impl Animator {
