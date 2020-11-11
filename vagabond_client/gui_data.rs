@@ -1,5 +1,6 @@
 use ggez::graphics;
 use ggez::graphics::{Color, DrawParam, Font, Mesh, MeshBuilder, Text, TextFragment};
+use ggez::input::mouse::MouseButton;
 use ggez::{Context, GameResult};
 
 use serde::{Deserialize, Serialize};
@@ -108,7 +109,7 @@ impl Clock {
         let scale = graphics::Scale::uniform(36.0);
 
         let (timer_text, rect_mesh) =
-            create_text_with_background(ctx, self.current.to_string(), font.clone(), scale);
+            create_text_with_background(ctx, self.current.to_string(), font, scale);
 
         let location = Point2::new(
             (SCREEN_WIDTH / 2.0) - (timer_text.width(ctx) as f32 / 2.0),
@@ -142,6 +143,8 @@ pub struct Button {
     mouse_clicked: bool,
     button_text: Text,
     button_text_position: Point2,
+    text_width: f32,
+    text_height: f32,
     button_mesh_outline: Mesh, // will be used to create trim around button
     button_mesh_filled: Mesh,
     pub visible: bool,
@@ -161,7 +164,7 @@ impl Button {
         let clicked_color = Color::new(0.5, 0.5, 0.5, 1.0);
 
         // set Text
-        let button_text = create_text(text, font.clone(), text_scale);
+        let button_text = create_text(text, font, text_scale);
 
         // set position of text
         let button_text_pos = Point2::new(position.x + 5.0, position.y + 5.0);
@@ -201,6 +204,8 @@ impl Button {
             mouse_clicked: false,
             button_text: button_text,
             button_text_position: button_text_pos,
+            text_width: text_width,
+            text_height: text_height,
             button_mesh_outline: rect_mesh_outline,
             button_mesh_filled: rect_mesh_filled,
             visible: visible,
@@ -218,7 +223,9 @@ impl Button {
             graphics::draw(
                 ctx,
                 &self.button_mesh_filled,
-                DrawParam::new().color(self.hovered_color.clone()),
+                DrawParam::new()
+                    .color(self.hovered_color.clone())
+                    .dest(self.bounds.top_left.as_mint_point()),
             )
             .unwrap();
         } else if self.mouse_clicked == true {
@@ -226,7 +233,9 @@ impl Button {
             graphics::draw(
                 ctx,
                 &self.button_mesh_filled,
-                DrawParam::new().color(self.clicked_color.clone()),
+                DrawParam::new()
+                    .color(self.clicked_color.clone())
+                    .dest(self.bounds.top_left.as_mint_point()),
             )
             .unwrap();
         } else {
@@ -234,28 +243,101 @@ impl Button {
             graphics::draw(
                 ctx,
                 &self.button_mesh_filled,
-                DrawParam::new().color(self.unhovered_color.clone()),
+                DrawParam::new()
+                    .color(self.unhovered_color.clone())
+                    .dest(self.bounds.top_left.as_mint_point()),
             )
             .unwrap();
         }
 
         // outline the button
-        graphics::draw(ctx, &self.button_mesh_outline, DrawParam::new()).unwrap();
+        graphics::draw(
+            ctx,
+            &self.button_mesh_outline,
+            DrawParam::new().dest(self.bounds.top_left.as_mint_point()),
+        )
+        .unwrap();
 
         // draw text
-        graphics::draw(ctx, &self.button_text, DrawParam::new().dest(self.button_text_position.as_mint_point()).color(Color::new(0.0,0.0,0.0,1.0))).unwrap();
+        graphics::draw(
+            ctx,
+            &self.button_text,
+            DrawParam::new()
+                .dest(self.button_text_position.as_mint_point())
+                .color(Color::new(0.0, 0.0, 0.0, 1.0)),
+        )
+        .unwrap();
 
         Ok(())
+    }
+
+    pub fn mouse_clicked(&mut self) -> bool {
+        self.mouse_clicked
+    }
+    pub fn mouse_motion_event(&mut self, mouse_position: &Point2) {
+        if self.visible == false {
+            return ();
+        }
+        if self.bounds.check_bounds_point(mouse_position) == true {
+            self.mouse_hover = true;
+        } else {
+            self.mouse_hover = false;
+        }
+    }
+
+    pub fn mouse_button_down_event(&mut self, mouse_button: &MouseButton, mouse_position: &Point2) {
+        if self.visible == false {
+            return ();
+        }
+        match mouse_button {
+            MouseButton::Left => {
+                if self.bounds.check_bounds_point(mouse_position) == true {
+                    self.mouse_clicked = true;
+                }
+            }
+            _ => (),
+        }
+    }
+
+    pub fn mouse_button_up_event(&mut self, mouse_button: &MouseButton, mouse_position: &Point2) {
+        if self.visible == false {
+            return ();
+        }
+        match mouse_button {
+            MouseButton::Left => {
+                if self.bounds.check_bounds_point(mouse_position) == true {
+                    self.mouse_clicked = false;
+                }
+            }
+            _ => (),
+        }
+    }
+
+    pub fn change_location(&mut self, position: Point2) {
+        self.bounds.top_left = position;
+        self.bounds.bottom_right = Point2::new(
+            self.bounds.top_left.x + self.text_width + 10.0,
+            self.bounds.top_left.y + self.text_height + 10.0,
+        );
+        self.button_text_position = Point2::new(position.x + 5.0, position.y + 5.0);
+    }
+
+    pub fn get_text_width(&self) -> f32 {
+        self.text_width
+    }
+
+    pub fn get_text_height(&self) -> f32 {
+        self.text_height
     }
 }
 
 pub fn create_text_with_background(
     ctx: &mut Context,
     text: String,
-    font: Font,
+    font: &Font,
     scale: graphics::Scale,
 ) -> (Text, Mesh) {
-    let text_graphic = create_text(text, font.clone(), scale);
+    let text_graphic = create_text(text, font, scale);
 
     let text_width = text_graphic.width(ctx) as f32;
     let text_height = text_graphic.height(ctx) as f32;
@@ -274,7 +356,7 @@ pub fn create_text_with_background(
     (text_graphic, rect_mesh)
 }
 
-fn create_text(text: String, font: Font, scale: graphics::Scale) -> Text {
+fn create_text(text: String, font: &Font, scale: graphics::Scale) -> Text {
     let text_fragment = TextFragment::new(text.to_string())
         .scale(scale)
         .font(font.clone());
@@ -296,6 +378,7 @@ fn create_rect_mesh(
         rectangle_bounds.bottom_right.x - rectangle_bounds.top_left.x,
         rectangle_bounds.bottom_right.y - rectangle_bounds.top_left.y,
     );
+
     mesh_builder
         .rectangle(draw_mode, rect, color)
         .build(ctx)

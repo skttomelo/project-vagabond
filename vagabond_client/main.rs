@@ -3,6 +3,7 @@ use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::graphics::{DrawParam, FilterMode, Font, Image, Rect};
+use ggez::input::mouse::MouseButton;
 use ggez::nalgebra::Point2;
 use ggez::{Context, GameResult};
 
@@ -26,7 +27,7 @@ mod gui_data;
 mod server_data;
 
 use constants::{SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
-use game_data::{ControlledActor, GameMatch};
+use game_data::{GameMatch, KeyboardControlledActor, MouseControlledActor};
 use server_data::ServerGameMatch;
 
 /*************************************************************
@@ -40,7 +41,6 @@ struct MainState {
     entity_spritesheet: Image,
     entity_drawparams: Vec<DrawParam>,
     background_assets: Vec<Image>,
-    font: Font,
     server: TcpStream,
 }
 
@@ -53,25 +53,25 @@ impl MainState {
         let id: usize;
         let mut string_data: String;
 
-        // first acquire id
+        // load assets
+        let (entity_spritesheet, entity_drawparams, background_assets) =
+            MainState::load_images(ctx);
+
+        let font = Font::new(ctx, "/Fonts/PressStart2P-vaV7.ttf").unwrap();
+
+        // acquire id
         server.read(&mut data).unwrap();
         string_data = String::from(from_utf8(&data).unwrap());
         string_data = String::from(string_data.trim_matches(char::from(0)));
         id = string_data.parse().unwrap(); // because id's type is declared earlier we do not need to do `parse::<u8>()`
         println!("{}", id);
-        let gm = GameMatch::new(id);
-
-        let (entity_spritesheet, entity_drawparams, background_assets) =
-            MainState::load_images(ctx);
-
-        let font = Font::new(ctx, "/Fonts/PressStart2P-vaV7.ttf").unwrap();
+        let gm = GameMatch::new(ctx, id, font);
 
         let s = MainState {
             game_match: gm,
             entity_spritesheet: entity_spritesheet,
             entity_drawparams: entity_drawparams,
             background_assets: background_assets,
-            font: font,
             server: server,
         };
         Ok(s)
@@ -169,12 +169,7 @@ impl EventHandler for MainState {
 
         // draw everything else
         self.game_match
-            .draw(
-                ctx,
-                &self.entity_spritesheet,
-                &self.entity_drawparams,
-                &self.font,
-            )
+            .draw(ctx, &self.entity_spritesheet, &self.entity_drawparams)
             .expect("Draw call for GameMatch failed");
 
         graphics::present(ctx)?;
@@ -193,6 +188,18 @@ impl EventHandler for MainState {
 
     fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, keymods: KeyMods) {
         self.game_match.key_up_event(keycode, keymods);
+    }
+
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
+        self.game_match.mouse_motion_event(x, y);
+    }
+
+    fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
+        self.game_match.mouse_button_up_event(&button, x, y);
+    }
+
+    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
+        self.game_match.mouse_button_down_event(&button, x, y);
     }
 }
 

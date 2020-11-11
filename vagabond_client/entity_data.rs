@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use crate::animate::Animator;
 use crate::constants::{MAX_HP, PLAYER_TWO_COLOR, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
-use crate::game_data::ControlledActor;
+use crate::game_data::KeyboardControlledActor;
 use crate::geometry::{Point2, Rect};
 use crate::server_data::ServerEntity;
 
@@ -286,7 +286,7 @@ impl Entity {
     }
 }
 
-impl ControlledActor for Entity {
+impl KeyboardControlledActor for Entity {
     fn key_down_event(&mut self, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
         match keycode {
             KeyCode::Space => {

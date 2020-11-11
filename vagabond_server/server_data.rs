@@ -2,10 +2,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::geometry::{Point2, Rect};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Copy, Clone, Debug)]
+pub enum RematchStatus {
+    Yes,
+    No,
+    Maybe,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Copy, Clone, Debug)]
 pub enum MatchStatus {
     InProgress,
     Over(usize), // player id will go in the usize
+    Rematch(u8, RematchStatus),
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -13,6 +21,8 @@ pub struct ServerGameMatch {
     pub clock: Clock,
     pub server_entities: Vec<ServerEntity>,
     pub match_status: MatchStatus,
+    pub redo_status: MatchStatus,
+    pub redoing: bool,
 }
 
 impl ServerGameMatch {
@@ -20,10 +30,13 @@ impl ServerGameMatch {
         let ent = ServerEntity::new();
         let ent1 = ServerEntity::new();
         let entity_vector = vec![ent, ent1];
+
         ServerGameMatch {
             clock: Clock::new(),
             server_entities: entity_vector,
             match_status: MatchStatus::InProgress,
+            redo_status: MatchStatus::InProgress,
+            redoing: false,
         }
     }
 
@@ -46,6 +59,11 @@ impl ServerGameMatch {
             }
         } else {
             self.match_status = MatchStatus::Over(self.get_player_id_most_hp() + 1);
+
+            if self.redoing == false {
+                self.redo_status = MatchStatus::Rematch(0, RematchStatus::Maybe);
+                self.redoing = true;
+            }
         }
     }
 
@@ -86,6 +104,43 @@ impl ServerGameMatch {
         self.server_entities[first_entity_id]
             .get_entity_actions_as_mut_ref()
             .damage_check = false;
+    }
+
+    // updates the server so that it knows how many people want to redo the match or if someone doesn't want to
+    pub fn update_redo(&mut self, game_match: &ServerGameMatch) {
+        match game_match.redo_status {
+            MatchStatus::Rematch(_, status) => match status {
+                RematchStatus::Yes => match &self.redo_status {
+                    MatchStatus::Rematch(mut num_players, _) => {
+                        num_players += 1;
+
+                        if num_players < 2 {
+                            self.redo_status =
+                                MatchStatus::Rematch(num_players, RematchStatus::Maybe);
+                        } else {
+                            self.redo_status =
+                                MatchStatus::Rematch(num_players, RematchStatus::Yes);
+                        }
+                    }
+                    _ => (),
+                },
+                RematchStatus::No => {
+                    self.redo_status = MatchStatus::Rematch(0, RematchStatus::No);
+                }
+                RematchStatus::Maybe => (),
+            },
+            _ => (),
+        }
+    }
+
+    pub fn restart_match(&mut self) {
+        self.server_entities[0].hp = 6;
+        self.server_entities[1].hp = 6;
+
+        self.match_status = MatchStatus::InProgress;
+        self.redo_status = MatchStatus::InProgress;
+
+        self.redoing = false;
     }
 }
 

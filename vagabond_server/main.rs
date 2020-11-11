@@ -12,7 +12,7 @@ mod geometry;
 mod server_data;
 
 use animate::Animator;
-use server_data::{MatchStatus, ServerGameMatch};
+use server_data::{MatchStatus, RematchStatus, ServerGameMatch};
 
 pub struct ThreadPool {
     threads: Vec<thread::JoinHandle<()>>,
@@ -93,7 +93,7 @@ fn handle_client(
     }
 
     // establish connection loop
-    while match socket.read(&mut data) {
+    'socket_loop: while match socket.read(&mut data) {
         Ok(_) => true,
         Err(_) => {
             println!(
@@ -108,9 +108,31 @@ fn handle_client(
         let match_details: ServerGameMatch = bincode::deserialize(&data).unwrap();
 
         // update the player's data on the server
-        match game_match.read().unwrap().match_status {
+
+        // clock updating
+        match &game_match.read().unwrap().match_status {
             MatchStatus::InProgress => clock_timer.write().unwrap().update(),
             _ => (),
+        }
+
+        // check if the players want to play again if the match is over
+        {
+            let mut g_match = game_match.write().unwrap();
+            match g_match.redo_status {
+                MatchStatus::Rematch(num_players, status) => match status {
+                    RematchStatus::Yes => {
+                        if num_players > 1 {
+                            g_match.restart_match();
+                            &mut clock_timer.write().unwrap().end();
+                        }
+                    }
+                    RematchStatus::No => {
+                        break 'socket_loop;
+                    }
+                    _ => (),
+                },
+                _ => (),
+            }
         }
 
         let current_time = clock_timer.read().unwrap().current_frame();
@@ -120,6 +142,7 @@ fn handle_client(
             .write()
             .unwrap()
             .update_entity(id, match_details.server_entities[id].clone());
+        game_match.write().unwrap().update_redo(&match_details);
 
         // Serialize the data on server and then send it back to the client
         let serialized_data: Vec<u8> = bincode::serialize(&(*game_match.write().unwrap())).unwrap();

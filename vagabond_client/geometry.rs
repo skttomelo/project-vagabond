@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Point2 {
     pub x: f32,
     pub y: f32,
@@ -20,7 +20,7 @@ impl Point2 {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Rect {
     pub top_left: Point2,
     pub bottom_right: Point2,
@@ -39,5 +39,19 @@ impl Rect {
         self.top_left.y += vel.y;
         self.bottom_right.x += vel.x;
         self.bottom_right.y += vel.y;
+    }
+
+    pub fn check_bounds_point(self, point: &Point2) -> bool {
+        // if point is on left side of other
+        if self.top_left.x >= point.x || point.x >= self.bottom_right.x {
+            return false;
+        }
+
+        // if point is above other
+        if self.top_left.y >= point.y || point.y >= self.bottom_right.y {
+            return false;
+        }
+
+        true
     }
 }

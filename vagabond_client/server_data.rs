@@ -11,6 +11,8 @@ pub struct ServerGameMatch {
     clock: Clock,
     server_entities: Vec<ServerEntity>,
     match_status: MatchStatus,
+    redo_status: MatchStatus,
+    redoing: bool,
 }
 
 impl ServerGameMatch {
@@ -18,6 +20,8 @@ impl ServerGameMatch {
         let mut server_entities: Vec<ServerEntity> = Vec::new();
         let entities = game_match.get_entities();
         let match_status = game_match.get_match_status();
+        let redo_status = game_match.get_redo_status();
+        let redoing = game_match.get_redoing();
 
         for entity in entities {
             server_entities.push(ServerEntity::from_entity(&entity));
@@ -27,6 +31,8 @@ impl ServerGameMatch {
             clock: game_match.get_clock(),
             server_entities: server_entities,
             match_status: match_status,
+            redo_status: redo_status,
+            redoing: redoing,
         }
     }
 }
@@ -39,8 +45,14 @@ impl ServerGameMatch {
     pub fn get_match_status(&self) -> MatchStatus {
         self.match_status.clone()
     }
+    pub fn get_redo_status(&self) -> MatchStatus {
+        self.redo_status.clone()
+    }
     pub fn get_server_entities(&self) -> Vec<ServerEntity> {
         self.server_entities.clone()
+    }
+    pub fn get_redoing(&self) -> bool {
+        self.redoing.clone()
     }
 }
 
