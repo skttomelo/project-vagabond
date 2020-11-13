@@ -115,34 +115,37 @@ fn handle_client(
             _ => (),
         }
 
-        // check if the players want to play again if the match is over
-        {
-            let mut g_match = game_match.write().unwrap();
-            match g_match.redo_status {
-                MatchStatus::Rematch(num_players, status) => match status {
-                    RematchStatus::Yes => {
-                        if num_players > 1 {
-                            g_match.restart_match();
-                            &mut clock_timer.write().unwrap().end();
-                        }
-                    }
-                    RematchStatus::No => {
-                        break 'socket_loop;
-                    }
-                    _ => (),
-                },
-                _ => (),
-            }
-        }
-
         let current_time = clock_timer.read().unwrap().current_frame();
         game_match.write().unwrap().update_clock(current_time);
 
+        // check if the players want to play again if the match is over
+        {
+            let mut g_match = game_match.write().unwrap();
+            let mut num_players = 0;
+            for entity in &g_match.server_entities {
+                match entity.get_redo_status_as_ref() {
+                    MatchStatus::Rematch(status) => {
+                        match status {
+                            RematchStatus::Yes => num_players += 1,
+                            RematchStatus::No => break 'socket_loop,
+                            _ => (),
+                        }
+                    },
+                    _ => (),
+                }
+            }
+
+            if num_players >= 2 {
+                &mut clock_timer.write().unwrap().end();
+                g_match.restart_match();
+            }
+        }
+
+        // update player data
         game_match
             .write()
             .unwrap()
             .update_entity(id, match_details.server_entities[id].clone());
-        game_match.write().unwrap().update_redo(&match_details);
 
         // Serialize the data on server and then send it back to the client
         let serialized_data: Vec<u8> = bincode::serialize(&(*game_match.write().unwrap())).unwrap();

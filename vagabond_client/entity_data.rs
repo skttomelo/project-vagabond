@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use crate::animate::Animator;
 use crate::constants::{MAX_HP, PLAYER_TWO_COLOR, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
-use crate::game_data::KeyboardControlledActor;
+use crate::game_data::{KeyboardControlledActor, MatchStatus};
 use crate::geometry::{Point2, Rect};
 use crate::server_data::ServerEntity;
 
@@ -62,6 +62,8 @@ pub struct Entity {
     bound: Rect,
     attack_bound: Rect,
     scale: Point2, // make changes to reflect in server code because right now that is reflected as a f32 only
+    redo_status: MatchStatus,
+    reset: bool
 }
 impl Entity {
     pub fn new(id: usize) -> Entity {
@@ -131,6 +133,8 @@ impl Entity {
             bound: Rect::new(bound_top_left_position, bound_bottom_right_position),
             attack_bound: Rect::new(attack_top_left_position, attack_bottom_right_position),
             scale: Point2::new(SCALE, SCALE),
+            redo_status: MatchStatus::InProgress,
+            reset: false,
         }
     }
 
@@ -256,7 +260,7 @@ impl Entity {
         self.attack_bound.clone()
     }
 
-    // might implement
+    // might implement later
     #[allow(dead_code)]
     pub fn get_movement_animator(&self) -> Animator {
         self.movement_animator.clone()
@@ -268,6 +272,18 @@ impl Entity {
 
     pub fn get_entity_actions(&self) -> EntityActions {
         self.entity_actions.clone()
+    }
+
+    pub fn get_redo_status(&self) -> MatchStatus {
+        self.redo_status.clone()
+    }
+
+    pub fn set_redo_status(&mut self, status: MatchStatus) {
+        self.redo_status = status;
+    }
+
+    pub fn get_reset(&self) -> bool {
+        self.reset.clone()
     }
 }
 
@@ -283,6 +299,8 @@ impl Entity {
         self.vel = server_entity.get_vel();
         self.bound = server_entity.get_bound();
         self.attack_bound = server_entity.get_attack_bound();
+        self.redo_status = server_entity.get_redo_status();
+        self.reset = server_entity.get_reset();
     }
 }
 

@@ -13,7 +13,7 @@ pub enum RematchStatus {
 pub enum MatchStatus {
     InProgress,
     Over(usize), // player id will go in the usize
-    Rematch(u8, RematchStatus),
+    Rematch(RematchStatus),
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -21,8 +21,6 @@ pub struct ServerGameMatch {
     pub clock: Clock,
     pub server_entities: Vec<ServerEntity>,
     pub match_status: MatchStatus,
-    pub redo_status: MatchStatus,
-    pub redoing: bool,
 }
 
 impl ServerGameMatch {
@@ -35,8 +33,6 @@ impl ServerGameMatch {
             clock: Clock::new(),
             server_entities: entity_vector,
             match_status: MatchStatus::InProgress,
-            redo_status: MatchStatus::InProgress,
-            redoing: false,
         }
     }
 
@@ -45,6 +41,10 @@ impl ServerGameMatch {
             && self.server_entities[1].hp > 0
             && self.clock.current > 0
         {
+            // if player.reset == true {
+            //     self.server_entities[id].reset = false;
+            // }
+
             let hp = self.server_entities[id].hp;
             self.server_entities[id] = player;
             self.server_entities[id].hp = hp;
@@ -57,13 +57,29 @@ impl ServerGameMatch {
 
                 self.attack_bound_check(id, index);
             }
-        } else {
-            self.match_status = MatchStatus::Over(self.get_player_id_most_hp() + 1);
+        } else { // match is over
+            // this does not work because if the player is the winner then it just returns out of it because they are not dead....
+            // if self.server_entities[id].hp > 1 {
+            //     return ();
+            // }
 
-            if self.redoing == false {
-                self.redo_status = MatchStatus::Rematch(0, RematchStatus::Maybe);
-                self.redoing = true;
-            }
+            // if self.server_entities[id].reset == true {
+            //     return ();
+            // }
+            
+            // update player redo_status on server
+            self.server_entities[id].redo_status = player.get_redo_status();
+            
+            match self.match_status {
+                MatchStatus::InProgress => {
+                    // match is over so we need to say who won the fight
+                    self.match_status = MatchStatus::Over(self.get_player_id_most_hp() + 1);
+                    
+                    // match has just finished so we need to change the redo status to Rematch
+                    self.server_entities[id].redo_status = MatchStatus::Rematch(RematchStatus::Maybe);
+                },
+                _ => (),
+            };
         }
     }
 
@@ -106,47 +122,19 @@ impl ServerGameMatch {
             .damage_check = false;
     }
 
-    // updates the server so that it knows how many people want to redo the match or if someone doesn't want to
-    pub fn update_redo(&mut self, game_match: &ServerGameMatch) {
-        match game_match.redo_status {
-            MatchStatus::Rematch(_, status) => match status {
-                RematchStatus::Yes => match &self.redo_status {
-                    MatchStatus::Rematch(mut num_players, _) => {
-                        num_players += 1;
-
-                        if num_players < 2 {
-                            self.redo_status =
-                                MatchStatus::Rematch(num_players, RematchStatus::Maybe);
-                        } else {
-                            self.redo_status =
-                                MatchStatus::Rematch(num_players, RematchStatus::Yes);
-                        }
-                    }
-                    _ => (),
-                },
-                RematchStatus::No => {
-                    self.redo_status = MatchStatus::Rematch(0, RematchStatus::No);
-                }
-                RematchStatus::Maybe => (),
-            },
-            _ => (),
-        }
-    }
-
     pub fn restart_match(&mut self) {
-        self.server_entities[0].hp = 6;
-        self.server_entities[1].hp = 6;
+        for entity in &mut self.server_entities {
+            entity.hp = 5;
+            entity.reset = true;
+        }
 
         self.match_status = MatchStatus::InProgress;
-        self.redo_status = MatchStatus::InProgress;
-
-        self.redoing = false;
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct ServerEntity {
-    id: usize,
+    pub id: usize,
     hp: i8, // health of entity
     entity_actions: EntityActions,
     attack_animator: ServerAnimator,
@@ -154,6 +142,8 @@ pub struct ServerEntity {
     vel: Point2,
     bound: Rect,
     attack_bound: Rect,
+    pub redo_status: MatchStatus,
+    reset: bool,
 }
 
 impl ServerEntity {
@@ -167,6 +157,8 @@ impl ServerEntity {
             vel: Point2::new(0.0, 0.0),
             bound: Rect::new(Point2::new(0.0, 0.0), Point2::new(0.0, 0.0)),
             attack_bound: Rect::new(Point2::new(0.0, 0.0), Point2::new(0.0, 0.0)),
+            redo_status: MatchStatus::InProgress,
+            reset: false,
         }
     }
 }
@@ -225,6 +217,14 @@ impl ServerEntity {
 
     pub fn get_entity_actions_as_mut_ref(&mut self) -> &mut EntityActions {
         &mut self.entity_actions
+    }
+
+    pub fn get_redo_status_as_ref(&self) -> &MatchStatus {
+        &self.redo_status
+    }
+    
+    pub fn get_redo_status(&self) -> MatchStatus {
+        self.redo_status.clone()
     }
 }
 

@@ -299,15 +299,13 @@ impl Button {
         }
     }
 
-    pub fn mouse_button_up_event(&mut self, mouse_button: &MouseButton, mouse_position: &Point2) {
+    pub fn mouse_button_up_event(&mut self, mouse_button: &MouseButton, _mouse_position: &Point2) {
         if self.visible == false {
             return ();
         }
         match mouse_button {
             MouseButton::Left => {
-                if self.bounds.check_bounds_point(mouse_position) == true {
-                    self.mouse_clicked = false;
-                }
+                self.mouse_clicked = false;
             }
             _ => (),
         }

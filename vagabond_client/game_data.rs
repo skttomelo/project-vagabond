@@ -34,7 +34,7 @@ pub enum RematchStatus {
 pub enum MatchStatus {
     InProgress,
     Over(usize), // player id will go in the usize
-    Rematch(u8, RematchStatus),
+    Rematch(RematchStatus),
 }
 
 pub struct GameMatch {
@@ -46,8 +46,6 @@ pub struct GameMatch {
     rematch_button: Button,
     quit_button: Button,
     match_status: MatchStatus,
-    redo_status: MatchStatus,
-    redoing: bool,
     pub entities: Vec<Entity>,
 }
 
@@ -59,7 +57,6 @@ impl GameMatch {
         let hp_bar_2 = HealthBar::new(1);
         let entity_vector = vec![ent, ent1];
         let match_status = MatchStatus::InProgress;
-        let redo_status = MatchStatus::InProgress;
 
         let mut rematch_button = Button::new(
             ctx,
@@ -98,8 +95,6 @@ impl GameMatch {
             rematch_button: rematch_button,
             quit_button: quit_button,
             match_status: match_status,
-            redo_status: redo_status,
-            redoing: false,
             entities: entity_vector,
         }
     }
@@ -110,21 +105,27 @@ impl GameMatch {
             MatchStatus::InProgress => {
                 self.entities[0].update().unwrap();
                 self.entities[1].update().unwrap();
-                self.rematch_button.visible = false;
-                self.quit_button.visible = false;
+                if self.rematch_button.visible == true {
+                    self.rematch_button.visible = false;
+                    self.quit_button.visible = false;
+                }
             }
             MatchStatus::Over(_) => {
-                self.rematch_button.visible = true;
-                self.quit_button.visible = true;
+                if self.rematch_button.visible == false {
+                    self.rematch_button.visible = true;
+                    self.quit_button.visible = true;
+                }
             }
             _ => (),
         }
 
         // reset players positions after round restart
-        if self.entities[self.id].get_hp() == 6 {
-            let ent = Entity::new(self.id);
-
-            self.entities[self.id] = ent;
+        if self.entities[0].get_reset() == true || self.entities[1].get_reset() == true {
+            self.entities[0] = Entity::new(0);
+            self.entities[1] = Entity::new(1);
+            self.match_status = MatchStatus::InProgress;
+            self.rematch_button.visible = false;
+            self.quit_button.visible = false;
         }
 
         self.health_bar_1.update(self.entities[0].get_hp());
@@ -133,9 +134,9 @@ impl GameMatch {
         // we can assume both buttons are visible if one is visible since they will always be visible at the same time
         if self.rematch_button.visible == true {
             if self.rematch_button.mouse_clicked() == true {
-                self.redo_status = MatchStatus::Rematch(1, RematchStatus::Yes);
+                self.entities[self.id].set_redo_status(MatchStatus::Rematch(RematchStatus::Yes));
             } else if self.quit_button.mouse_clicked() == true {
-                self.redo_status = MatchStatus::Rematch(1, RematchStatus::No);
+                self.entities[self.id].set_redo_status(MatchStatus::Rematch(RematchStatus::No))
             }
         }
 
@@ -201,17 +202,11 @@ impl GameMatch {
     pub fn get_match_status(&self) -> MatchStatus {
         self.match_status.clone()
     }
-    pub fn get_redo_status(&self) -> MatchStatus {
-        self.redo_status.clone()
-    }
     pub fn get_clock(&self) -> Clock {
         self.clock.clone()
     }
     pub fn get_entities(&self) -> Vec<Entity> {
         self.entities.clone()
-    }
-    pub fn get_redoing(&self) -> bool {
-        self.redoing.clone()
     }
 }
 
@@ -220,8 +215,6 @@ impl GameMatch {
     pub fn update_from_server_game_match(&mut self, server_game_match: &ServerGameMatch) {
         self.clock = server_game_match.get_clock();
         self.match_status = server_game_match.get_match_status();
-        self.redo_status = server_game_match.get_redo_status();
-        self.redoing = server_game_match.get_redoing();
 
         let server_entities = server_game_match.get_server_entities();
 
